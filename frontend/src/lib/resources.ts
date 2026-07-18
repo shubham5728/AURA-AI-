@@ -174,16 +174,36 @@ async function timeline(): Promise<Row[]> {
  * renamed server-side, this page changes with it -- which is the difference
  * between showing the architecture and illustrating it.
  */
+/** Turns a backend context key into something a reader recognises. */
+const READS_LABELS: Record<string, string> = {
+  profile: 'your profile',
+  conditions: 'your conditions',
+  allergies: 'your allergies',
+  goals: 'your goals',
+  all_markers: 'all lab results',
+  metabolic_markers: 'sugar and cholesterol results',
+  marker_trends: 'your result history',
+  score: 'your health score',
+  medications: 'your medications',
+  interactions: 'drug interactions',
+  recent_logs: 'your daily logs',
+  activity_logs: 'steps and sleep',
+  diet_logs: 'your hydration logs',
+};
+
 async function agents(): Promise<Row[]> {
-  const roles = await get<Array<{ key: string; label: string; description: string }>>(
-    '/api/chat/roles',
-  );
+  const roles = await get<
+    Array<{ key: string; label: string; description: string; reads: string[] }>
+  >('/api/chat/roles');
+
   return roles.map((r) => ({
     id: r.key,
     name: r.label,
-    role: r.description,
+    focus: r.description,
     status: 'Active',
-    specialty: r.description,
+    // What this specialist is actually given. Naming it is the difference
+    // between showing the architecture and drawing a picture of it.
+    reads: (r.reads || []).map((k) => READS_LABELS[k] || k.replace(/_/g, ' ')),
   }));
 }
 

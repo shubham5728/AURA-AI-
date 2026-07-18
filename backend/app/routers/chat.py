@@ -86,8 +86,18 @@ def clear_history(
 
 @router.get("/roles")
 def list_roles() -> List[dict]:
-    """The specialist roles available. Unauthenticated -- no user data."""
+    """The specialist roles available. Unauthenticated -- no user data.
+
+    `reads` exposes each role's context slice. It is what makes the
+    specialisation inspectable rather than asserted: the Fitness role genuinely
+    never receives the medication list, and this is where anyone can check that.
+    """
     return [
-        {"key": role.key, "label": role.label, "description": role.description}
+        {
+            "key": role.key,
+            "label": role.label,
+            "description": role.description,
+            "reads": role.context_needs,
+        }
         for role in ROLES.values()
     ]
