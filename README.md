@@ -162,7 +162,55 @@ Patients · Doctors and clinicians · Hospitals and clinics · Health startups �
 
 ## Getting Started
 
-Setup and installation instructions will be added once development begins.
+The backend is running. Frontend is not built yet.
+
+**Requirements:** Python 3.10+
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+# source .venv/bin/activate   # macOS / Linux
+
+pip install -r requirements.txt
+cp .env.example .env
+uvicorn app.main:app --reload
+```
+
+Open **http://127.0.0.1:8000/docs** for the interactive API documentation.
+
+### Trying it without Firebase
+
+A Firebase project is not required for local development. While `ENV=development`, the API accepts a dev token so endpoints can be exercised immediately:
+
+```bash
+curl -X PUT http://127.0.0.1:8000/api/profile \
+  -H "Authorization: Bearer dev you@example.com" \
+  -H "Content-Type: application/json" \
+  -d '{"dob":"1998-04-12","sex":"male","height_cm":175,"weight_kg":78,
+       "conditions":["prediabetes"],"allergies":[],"goals":["lower HbA1c"]}'
+```
+
+> ⚠️ Dev tokens are **not verified** — any caller can claim any identity. They are refused whenever `ENV=production`, and the server logs a warning at startup while they are active.
+
+By default the app uses a local SQLite file, so no database setup is needed. To run PostgreSQL instead:
+
+```bash
+docker compose up -d
+# then set DATABASE_URL=postgresql://aura:aura@localhost:5432/aura in .env
+```
+
+### Available endpoints
+
+| Method | Route | Purpose |
+|---|---|---|
+| `GET` | `/health` | Liveness check (no auth) |
+| `GET` | `/api/me` | Current authenticated user |
+| `GET` | `/api/profile` | Read profile, with derived age and BMI |
+| `PUT` | `/api/profile` | Create or update profile (onboarding) |
+| `GET` | `/api/twin/context` | De-identified snapshot the AI layer receives |
+
+`/api/twin/context` exists to make the privacy boundary inspectable — call it to see exactly what reaches a third-party model, and confirm your name, email, and date of birth are not in it.
 
 ---
 

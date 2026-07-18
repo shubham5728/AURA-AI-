@@ -1,0 +1,181 @@
+"""Database models for the Digital Twin.
+
+Schema follows the data model in ROADMAP.md. The one design decision worth
+restating here: `Biomarker` is a separate table from `Report`, not a JSON blob
+inside it. Reports are documents; biomarkers are queryable data points. That
+split is what makes "show my HbA1c across every report" a single query, and
+every trend chart and risk calculation depends on it.
+
+List-valued columns use JSON rather than Postgres ARRAY so the same models run
+on SQLite in development and Postgres in production.
+"""
+
+from datetime import date, datetime
+from typing import List, Optional
+
+from sqlalchemy import (
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import JSON
+
+from app.database import Base
+
+
+class User(Base):
+    """Identity only. No health data lives here."""
+
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    firebase_uid: Mapped[str] = mapped_column(String(128), unique=True, index=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    profile: Mapped[Optional["Profile"]] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
+    reports: Mapped[List["Report"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    daily_logs: Mapped[List["DailyLog"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    medications: Mapped[List["Medication"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+
+
+class Profile(Base):
+    """The static baseline of the Digital Twin.
+
+    This is the starting state every AI response reasons from. An empty profile
+    is what produces the generic advice AURA exists to avoid.
+    """
+
+    __tablename__ = "profiles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True
+    )
+
+    dob: Mapped[date] = mapped_column(Date)
+    sex: Mapped[str] = mapped_column(String(16))
+    height_cm: Mapped[float] = mapped_column(Float)
+    weight_kg: Mapped[float] = mapped_column(Float)
+
+    conditions: Mapped[list] = mapped_column(JSON, default=list)
+    allergies: Mapped[list] = mapped_column(JSON, default=list)
+    goals: Mapped[list] = mapped_column(JSON, default=list)
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["User"] = relationship(back_populates="profile")
+
+
+class Report(Base):
+    """An uploaded document plus the raw result of parsing it."""
+
+    __tablename__ = "reports"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    file_url: Mapped[str] = mapped_column(Text)
+    report_type: Mapped[str] = mapped_column(String(64), default="blood_test")
+
+    # Unmodified model output, kept even after biomarkers are extracted so a
+    # bad parse can be re-run without asking the user to upload again.
+    extracted_json: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    parse_status: Mapped[str] = mapped_column(String(32), default="pending")
+    parse_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    parsed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="reports")
+    biomarkers: Mapped[List["Biomarker"]] = relationship(
+        back_populates="report", cascade="all, delete-orphan"
+    )
+
+
+class Biomarker(Base):
+    """One lab value. The queryable layer under every trend and risk signal."""
+
+    __tablename__ = "biomarkers"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    report_id: Mapped[int] = mapped_column(
+        ForeignKey("reports.id", ondelete="CASCADE"), index=True
+    )
+
+    name: Mapped[str] = mapped_column(String(128), index=True)
+    value: Mapped[float] = mapped_column(Float)
+    unit: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+
+    ref_low: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    ref_high: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    # Computed in our code from the reference range, never taken from the model.
+    # Deterministic comparison removes a whole class of misinterpretation.
+    flag: Mapped[str] = mapped_column(String(16), default="unknown")
+
+    measured_at: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    report: Mapped["Report"] = relationship(back_populates="biomarkers")
+
+
+class DailyLog(Base):
+    """Time-series lifestyle data. One row per user per day."""
+
+    __tablename__ = "daily_logs"
+    __table_args__ = (UniqueConstraint("user_id", "date", name="uq_user_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    date: Mapped[date] = mapped_column(Date, index=True)
+
+    # Nullable throughout: a missing metric is not the same as a zero, and
+    # scoring must be able to tell "did not log" from "did not move".
+    steps: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    sleep_hours: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    water_ml: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    calories_in: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    calories_out: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="daily_logs")
+
+
+class Medication(Base):
+    """An active or past prescription."""
+
+    __tablename__ = "medications"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    drug_name: Mapped[str] = mapped_column(String(128), index=True)
+    dose: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    schedule: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+
+    start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    user: Mapped["User"] = relationship(back_populates="medications")

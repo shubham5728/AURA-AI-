@@ -1,0 +1,28 @@
+# Environment / secrets
+.env
+.env.local
+*-service-account.json
+firebase-credentials.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Database
+*.db
+*.sqlite3
+
+# Node
+node_modules/
+dist/
+build/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
