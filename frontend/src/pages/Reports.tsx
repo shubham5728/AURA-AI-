@@ -124,14 +124,14 @@ function ReportCard({ report }: { report: Report }) {
             return (
               <section key={panel.name} style={{ marginBottom: '1.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', flexWrap: 'wrap' }}>
-                  <h4 style={{ margin: 0, fontSize: 15 }}>{panel.name}</h4>
+                  <h4 style={{ margin: 0, fontSize: 17 }}>{panel.name}</h4>
                   {/* What the panel is for, so the grouping means something to
                       someone who does not already know these tests. */}
-                  <span style={{ fontSize: 13, opacity: 0.65 }}>
+                  <span style={{ fontSize: 14, opacity: 0.7 }}>
                     {PANEL_PURPOSE[panel.name] || ''}
                   </span>
                   {flagged > 0 && (
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#d97706' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>
                       {flagged} need{flagged === 1 ? 's' : ''} attention
                     </span>
                   )}
@@ -145,8 +145,8 @@ function ReportCard({ report }: { report: Report }) {
           })}
 
           <div style={{
-            fontSize: 13,
-            opacity: 0.75,
+            fontSize: 14,
+            opacity: 0.8,
             borderTop: '1px solid rgba(128,128,128,0.14)',
             paddingTop: '0.85rem',
           }}>
@@ -207,7 +207,7 @@ export default function ReportsPage() {
   };
 
   return (
-    <main className="page">
+    <main className="page" style={{ maxWidth: 1020 }}>
       <header className="page-head">
         <div>
           <h1>Medical Report Analyzer</h1>

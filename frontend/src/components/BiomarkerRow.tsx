@@ -77,19 +77,17 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
   return (
     <div
       style={{
-        padding: '0.7rem 0 0.7rem 0.7rem',
+        padding: '0.85rem 0 0.85rem 0.85rem',
         borderTop: '1px solid rgba(128,128,128,0.14)',
         background: abnormal ? 'rgba(217,119,6,0.05)' : undefined,
         borderLeft: `3px solid ${abnormal ? '#d97706' : 'transparent'}`,
       }}
     >
-      {/* Capped width so the value stays beside the name on a wide screen
-          instead of drifting to the far edge. */}
-      <div style={{ maxWidth: 760 }}>
+      <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'baseline' }}>
-          <b style={{ fontSize: 15 }}>{marker.label}</b>
+          <b style={{ fontSize: 17 }}>{marker.label}</b>
           <span style={{ whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: abnormal ? status.color : undefined }}>
+            <span style={{ fontSize: 21, fontWeight: 700, color: abnormal ? status.color : undefined }}>
               {marker.value.toLocaleString()}
             </span>
             {marker.unit && <small style={{ opacity: 0.6 }}> {marker.unit}</small>}
@@ -97,7 +95,7 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
         </div>
 
         {description && (
-          <div style={{ fontSize: 13, opacity: 0.7, marginTop: 1 }}>{description}</div>
+          <div style={{ fontSize: 14.5, opacity: 0.75, marginTop: 3 }}>{description}</div>
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginTop: '0.5rem' }}>
@@ -129,12 +127,12 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
           )}
 
           {normalRange && (
-            <small style={{ opacity: 0.6, whiteSpace: 'nowrap', fontSize: 12 }}>
+            <small style={{ opacity: 0.65, whiteSpace: 'nowrap', fontSize: 13.5 }}>
               {normalRange}
             </small>
           )}
 
-          <span style={{ fontSize: 12, fontWeight: 700, color: status.color, whiteSpace: 'nowrap', minWidth: 78, textAlign: 'right' }}>
+          <span style={{ fontSize: 13.5, fontWeight: 700, color: status.color, whiteSpace: 'nowrap', minWidth: 92, textAlign: 'right' }}>
             {status.label}
           </span>
         </div>
@@ -143,7 +141,7 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
             lab called this normal and AURA does not overrule it -- this only
             says the value sits close to a boundary. */}
         {nearEdge && !abnormal && (
-          <div style={{ fontSize: 12, opacity: 0.65, marginTop: 3 }}>
+          <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>
             Sits near the edge of the normal range.
           </div>
         )}
