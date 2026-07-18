@@ -138,22 +138,9 @@ flowchart TD
 
 ## Roadmap
 
-### Phase 1 — Hackathon MVP
-- [ ] User registration and profile
-- [ ] AI health chatbot
-- [ ] Medical report OCR parser
-- [ ] Personalized dashboard
-- [ ] Lifestyle simulator (v1)
-- [ ] Baseline health risk score
+Development is split into two phases — a hackathon MVP followed by enterprise-scale features.
 
-### Phase 2 — Future Scope
-- [ ] Wearable device integration
-- [ ] Hospital EHR API sync
-- [ ] Insurance platform integration
-- [ ] Dedicated doctor dashboard
-- [ ] Continuous anomaly monitoring
-- [ ] Real-time emergency alerts
-- [ ] Advanced predictive analytics
+See **[ROADMAP.md](ROADMAP.md)** for the full plan and current progress.
 
 ---
 
