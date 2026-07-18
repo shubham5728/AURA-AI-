@@ -214,6 +214,13 @@ docker compose up -d
 | `GET` | `/api/reports/{id}` | One report with all its biomarkers |
 | `GET` | `/api/reports/trends` | Each marker tracked across every report |
 | `DELETE` | `/api/reports/{id}` | Delete a report and its biomarkers |
+| `GET` | `/api/score` | Health Score with its full breakdown |
+| `PUT` | `/api/logs/{date}` | Log steps, sleep, water, calories for a day |
+| `GET` | `/api/logs` | Recent daily logs |
+| `POST` | `/api/medications` | Add a prescription |
+| `GET` | `/api/medications` | List prescriptions |
+| `GET` | `/api/medications/interactions` | Known interactions among them |
+| `DELETE` | `/api/medications/{id}` | Remove a prescription |
 
 `/api/twin/context` exists to make the privacy boundary inspectable — call it to see exactly what reaches a third-party model, and confirm your name, email, and date of birth are not in it.
 
@@ -224,6 +231,39 @@ Uploads are read by a multimodal model that returns structured JSON, rather than
 Set `GEMINI_API_KEY` in `.env` to enable real parsing. Get a key from **[aistudio.google.com/apikey](https://aistudio.google.com/apikey)** — it is free, and separate from any Gemini app subscription.
 
 Without a key the API falls back to a mock parser that returns fixed sample data, so the full upload flow still works end to end.
+
+### The Health Score
+
+`/api/score` never returns a bare number. Every response carries the deductions that produced it, each with a reason and the evidence behind it:
+
+```json
+{
+  "score": 36,
+  "status": "scored",
+  "summary": "Multiple areas need attention. The largest single factor is daily activity.",
+  "coverage": { "labs": true, "sleep": true, "medication": true, "...": "..." },
+  "deductions": [
+    {
+      "category": "activity",
+      "points": 12.0,
+      "reason": "Averaging 3,200 steps a day, below the 8,000 step target.",
+      "evidence": "Average over 3 logged day(s)."
+    },
+    {
+      "category": "labs",
+      "points": 6.0,
+      "reason": "HbA1c: moderately above the normal range.",
+      "evidence": "6.4 % measured on 2026-07-10"
+    }
+  ]
+}
+```
+
+Two properties worth knowing:
+
+**Missing data is never scored as good.** A user who has logged nothing gets `"score": null` and `"status": "insufficient_data"` — not 100. The `coverage` object states exactly which areas were assessed, so an incomplete picture is visible rather than flattering.
+
+**The calculation is pure.** `calculate_score()` depends only on its input state — no database, no clock. That is what lets the Lifestyle Simulator answer "what if I walked 8,000 steps?" by rebuilding the state with one field changed and calling the same function, so a projection and a real score can never drift apart.
 
 ### Running tests
 

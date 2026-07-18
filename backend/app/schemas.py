@@ -114,6 +114,46 @@ class TrendOut(BaseModel):
     points: List[TrendPoint]
 
 
+class DailyLogIn(BaseModel):
+    """Every field optional: users log what they track and skip the rest.
+
+    None means "not logged" and is excluded from averages -- distinct from 0,
+    which means the user genuinely recorded nothing that day.
+    """
+
+    steps: Optional[int] = Field(default=None, ge=0, le=100_000)
+    sleep_hours: Optional[float] = Field(default=None, ge=0, le=24)
+    water_ml: Optional[int] = Field(default=None, ge=0, le=20_000)
+    calories_in: Optional[int] = Field(default=None, ge=0, le=20_000)
+    calories_out: Optional[int] = Field(default=None, ge=0, le=20_000)
+
+
+class DailyLogOut(DailyLogIn):
+    model_config = ConfigDict(from_attributes=True)
+
+    date: date
+
+
+class MedicationIn(BaseModel):
+    drug_name: str = Field(min_length=1, max_length=128)
+    dose: Optional[str] = Field(default=None, max_length=64)
+    schedule: Optional[str] = Field(default=None, max_length=128)
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+
+class MedicationOut(MedicationIn):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
+class InteractionOut(BaseModel):
+    drugs: List[str]
+    severity: str
+    description: str
+
+
 class TwinContext(BaseModel):
     """De-identified snapshot sent to the model.
 
