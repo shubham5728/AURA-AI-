@@ -156,6 +156,26 @@ async function timeline(): Promise<Row[]> {
   return events.sort((a, b) => String(b.sort).localeCompare(String(a.sort))).slice(0, 8);
 }
 
+/**
+ * The specialist roles, straight from the backend.
+ *
+ * These are the actual routing targets, not a diagram. If a role is added or
+ * renamed server-side, this page changes with it -- which is the difference
+ * between showing the architecture and illustrating it.
+ */
+async function agents(): Promise<Row[]> {
+  const roles = await get<Array<{ key: string; label: string; description: string }>>(
+    '/api/chat/roles',
+  );
+  return roles.map((r) => ({
+    id: r.key,
+    name: r.label,
+    role: r.description,
+    status: 'Active',
+    specialty: r.description,
+  }));
+}
+
 async function interactions(): Promise<Row[]> {
   const list = await get<Interaction[]>('/api/medications/interactions');
   return list.map((i, index) => ({
@@ -175,7 +195,6 @@ async function interactions(): Promise<Row[]> {
 const NOT_MODELLED = [
   'appointments',
   'patients',
-  'agents',
   'audits',
   'wearables',
   'conditions',
@@ -196,6 +215,7 @@ const HANDLERS: Record<string, () => Promise<Row[]>> = {
   risks,
   timeline,
   interactions,
+  agents,
 };
 
 export async function fetchResource(resource: string): Promise<Row[]> {
