@@ -27,6 +27,7 @@ function ReportCard({ report }: { report: Report }) {
   // Expanded by default when something is out of range: the findings that
   // matter should not be behind a click.
   const [open, setOpen] = useState(abnormal.length > 0);
+  const [onlyAbnormal, setOnlyAbnormal] = useState(false);
 
   const measured = markers.find((m) => m.measured_at)?.measured_at;
   const failed = report.parse_status !== 'parsed';
@@ -78,7 +79,44 @@ function ReportCard({ report }: { report: Report }) {
 
       {open && markers.length > 0 && (
         <div style={{ marginTop: '1rem' }}>
-          {groupIntoPanels(markers).map((panel) => {
+          {/* Counts at a glance, so the whole report does not have to be read
+              to know whether anything needs attention.
+
+              Deliberately no score here. AURA's Health Score combines labs,
+              lifestyle and medications; putting a number on a single report
+              would look like the same thing and mean something different. */}
+          <div style={{
+            display: 'flex', gap: '1.5rem', flexWrap: 'wrap',
+            padding: '0.9rem 1rem', marginBottom: '1rem',
+            borderRadius: 12, background: 'rgba(128,128,128,0.07)',
+          }}>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>
+                {markers.length - abnormal.length}
+              </div>
+              <small style={{ opacity: 0.7 }}>within range</small>
+            </div>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: abnormal.length ? '#d97706' : undefined, opacity: abnormal.length ? 1 : 0.4 }}>
+                {abnormal.length}
+              </div>
+              <small style={{ opacity: 0.7 }}>need attention</small>
+            </div>
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 800, opacity: 0.75 }}>{markers.length}</div>
+              <small style={{ opacity: 0.7 }}>tests read</small>
+            </div>
+
+            {abnormal.length > 0 && (
+              <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 13 }}>
+                <input type="checkbox" checked={onlyAbnormal}
+                  onChange={(e) => setOnlyAbnormal(e.target.checked)} />
+                Show only results needing attention
+              </label>
+            )}
+          </div>
+
+          {groupIntoPanels(onlyAbnormal ? abnormal : markers).map((panel) => {
             const flagged = panel.markers.filter(
               (m) => m.flag === 'low' || m.flag === 'high',
             ).length;
