@@ -15,6 +15,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ClipboardPlus, Upload } from 'lucide-react';
 import BiomarkerRow from '../components/BiomarkerRow';
 import { get, upload } from '../lib/api';
+import { PANEL_PURPOSE } from '../lib/explanations';
 import { groupIntoPanels } from '../lib/panels';
 import type { Report } from '../lib/types';
 
@@ -77,19 +78,45 @@ function ReportCard({ report }: { report: Report }) {
 
       {open && markers.length > 0 && (
         <div style={{ marginTop: '1rem' }}>
-          {groupIntoPanels(markers).map((panel) => (
-            <section key={panel.name} style={{ marginBottom: '1.25rem' }}>
-              <span className="card-label">{panel.name.toUpperCase()}</span>
-              {panel.markers.map((m) => (
-                <BiomarkerRow key={m.id} marker={m} />
-              ))}
-            </section>
-          ))}
+          {groupIntoPanels(markers).map((panel) => {
+            const flagged = panel.markers.filter(
+              (m) => m.flag === 'low' || m.flag === 'high',
+            ).length;
 
-          <small style={{ opacity: 0.65 }}>
-            Ranges come from the report itself where printed. AURA compares values to
-            those ranges — it does not diagnose. Discuss anything flagged with your doctor.
-          </small>
+            return (
+              <section key={panel.name} style={{ marginBottom: '1.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <h4 style={{ margin: 0, fontSize: 15 }}>{panel.name}</h4>
+                  {/* What the panel is for, so the grouping means something to
+                      someone who does not already know these tests. */}
+                  <span style={{ fontSize: 13, opacity: 0.65 }}>
+                    {PANEL_PURPOSE[panel.name] || ''}
+                  </span>
+                  {flagged > 0 && (
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#d97706' }}>
+                      {flagged} need{flagged === 1 ? 's' : ''} attention
+                    </span>
+                  )}
+                </div>
+
+                {panel.markers.map((m) => (
+                  <BiomarkerRow key={m.id} marker={m} />
+                ))}
+              </section>
+            );
+          })}
+
+          <div style={{
+            fontSize: 13,
+            opacity: 0.75,
+            borderTop: '1px solid rgba(128,128,128,0.14)',
+            paddingTop: '0.85rem',
+          }}>
+            <b>How to read this.</b> "Normal" means your value falls inside the range
+            printed on your report for that test. A value outside the range is not a
+            diagnosis on its own — it is a reason to ask your doctor about it. AURA
+            compares numbers to ranges; it does not decide what they mean for you.
+          </div>
         </div>
       )}
     </article>
