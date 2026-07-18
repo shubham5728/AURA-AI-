@@ -209,8 +209,28 @@ docker compose up -d
 | `GET` | `/api/profile` | Read profile, with derived age and BMI |
 | `PUT` | `/api/profile` | Create or update profile (onboarding) |
 | `GET` | `/api/twin/context` | De-identified snapshot the AI layer receives |
+| `POST` | `/api/reports` | Upload a report, extract and flag its values |
+| `GET` | `/api/reports` | List uploaded reports |
+| `GET` | `/api/reports/{id}` | One report with all its biomarkers |
+| `GET` | `/api/reports/trends` | Each marker tracked across every report |
+| `DELETE` | `/api/reports/{id}` | Delete a report and its biomarkers |
 
 `/api/twin/context` exists to make the privacy boundary inspectable — call it to see exactly what reaches a third-party model, and confirm your name, email, and date of birth are not in it.
+
+### Report parsing
+
+Uploads are read by a multimodal model that returns structured JSON, rather than by generic OCR. Whether a value is low, normal, or high is then decided **in our code** by comparing against the reference range — never by the model, which can misjudge it.
+
+Set `GEMINI_API_KEY` in `.env` to enable real parsing. Get a key from **[aistudio.google.com/apikey](https://aistudio.google.com/apikey)** — it is free, and separate from any Gemini app subscription.
+
+Without a key the API falls back to a mock parser that returns fixed sample data, so the full upload flow still works end to end.
+
+### Running tests
+
+```bash
+cd backend
+pytest
+```
 
 ---
 

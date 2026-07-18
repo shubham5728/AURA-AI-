@@ -23,6 +23,16 @@ class Settings(BaseSettings):
 
     cors_origins: List[str] = ["http://localhost:5173", "http://localhost:3000"]
 
+    # Get a key from https://aistudio.google.com/apikey -- a Gemini app
+    # subscription does not grant API access. When empty, report parsing falls
+    # back to MockReportParser so the flow still works end to end.
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
+
+    # Local disk in development; Firebase Storage is the production target.
+    upload_dir: str = "./uploads"
+    max_upload_mb: int = 10
+
     @property
     def dev_auth_enabled(self) -> bool:
         """Dev auth requires BOTH the flag and a non-production environment.

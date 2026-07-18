@@ -16,6 +16,9 @@ venv/
 *.db
 *.sqlite3
 
+# Uploaded medical reports -- never commit user health data
+uploads/
+
 # Node
 node_modules/
 dist/

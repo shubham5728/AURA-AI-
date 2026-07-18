@@ -1,6 +1,6 @@
 """Request and response shapes for the API."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -61,6 +61,57 @@ class ProfileOut(BaseModel):
     # sees the same numbers instead of each recomputing them.
     age: Optional[int] = None
     bmi: Optional[float] = None
+
+
+class BiomarkerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    label: str
+    value: float
+    unit: Optional[str]
+    ref_low: Optional[float]
+    ref_high: Optional[float]
+    flag: str
+    measured_at: Optional[date]
+
+
+class ReportOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    report_type: str
+    parse_status: str
+    parse_error: Optional[str]
+    created_at: datetime
+    biomarker_count: int = 0
+    abnormal_count: int = 0
+
+
+class ReportDetailOut(ReportOut):
+    biomarkers: List[BiomarkerOut] = []
+
+
+class TrendPoint(BaseModel):
+    value: float
+    measured_at: Optional[date]
+    flag: str
+    report_id: int
+
+
+class TrendOut(BaseModel):
+    """A single marker across every report, oldest first.
+
+    This is the query the biomarkers/reports table split exists to make cheap.
+    """
+
+    name: str
+    label: str
+    unit: Optional[str]
+    ref_low: Optional[float]
+    ref_high: Optional[float]
+    points: List[TrendPoint]
 
 
 class TwinContext(BaseModel):
