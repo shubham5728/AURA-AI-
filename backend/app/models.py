@@ -205,4 +205,13 @@ class Medication(Base):
     start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     end_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
 
+    # Adherence is stored as the date last marked, not a boolean. A boolean
+    # would stay true forever once ticked, so yesterday's dose would still read
+    # as taken this morning.
+    last_taken_on: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
     user: Mapped["User"] = relationship(back_populates="medications")
+
+    @property
+    def taken_today(self) -> bool:
+        return self.last_taken_on == date.today()

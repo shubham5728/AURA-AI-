@@ -14,6 +14,7 @@ from app.schemas import (
     InteractionOut,
     MedicationIn,
     MedicationOut,
+    MedicationTakenIn,
 )
 from app.services.interactions import find_interactions
 
@@ -100,6 +101,34 @@ def list_medications(
         .order_by(Medication.id.desc())
         .all()
     )
+
+
+@router.patch("/medications/{medication_id}/taken", response_model=MedicationOut)
+def mark_taken(
+    medication_id: int,
+    payload: MedicationTakenIn,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> Medication:
+    """Mark today's dose as taken or not taken.
+
+    Records the date rather than a flag, so the state resets on its own at
+    midnight instead of reporting a stale dose as current.
+    """
+    medication = (
+        db.query(Medication)
+        .filter(Medication.id == medication_id, Medication.user_id == user.id)
+        .first()
+    )
+    if medication is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Medication not found."
+        )
+
+    medication.last_taken_on = date_type.today() if payload.taken else None
+    db.commit()
+    db.refresh(medication)
+    return medication
 
 
 @router.delete("/medications/{medication_id}", status_code=status.HTTP_204_NO_CONTENT)

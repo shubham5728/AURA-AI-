@@ -146,6 +146,11 @@ class MedicationOut(MedicationIn):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    taken_today: bool = False
+
+
+class MedicationTakenIn(BaseModel):
+    taken: bool
 
 
 class InteractionOut(BaseModel):
