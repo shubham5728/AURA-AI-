@@ -103,14 +103,24 @@ async function reports(): Promise<Row[]> {
     list.map((r) => get<Report>(`/api/reports/${r.id}`).catch(() => r)),
   );
 
-  return detailed.map((r) => ({
+  return detailed.map((r) => {
+    // Prefer the date printed on the report over the upload time -- that is the
+    // date the values actually describe, and the one a user recognises.
+    const measured = r.biomarkers?.find((b) => b.measured_at)?.measured_at;
+    const uploaded = r.created_at?.slice(0, 10);
+
+    return {
     id: r.id,
-    file_name: `Report #${r.id}`,
+    measured_on: measured || null,
+    file_name: measured
+      ? `Blood report · ${measured}`
+      : uploaded
+        ? `Report uploaded ${uploaded}`
+        : `Report #${r.id}`,
     status: r.parse_status === 'parsed' ? 'Analyzed' : r.parse_status,
     summary:
       r.parse_error ||
       `${r.biomarker_count} values extracted, ${r.abnormal_count} outside the normal range.`,
-    file_url: '#',
     extracted: {
       parameters: (r.biomarkers || []).map((b) => ({
         name: b.label,
@@ -119,7 +129,8 @@ async function reports(): Promise<Row[]> {
         status: b.flag === 'normal' ? 'Normal' : b.flag === 'unknown' ? 'Unknown' : b.flag === 'high' ? 'High' : 'Low',
       })),
     },
-  }));
+    };
+  });
 }
 
 /** Risk rows come from the score's deductions -- the same data, ranked. */
