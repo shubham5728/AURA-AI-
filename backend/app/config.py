@@ -33,7 +33,12 @@ class Settings(BaseSettings):
     # per-model, so a lighter model usually still has budget when the main one
     # is exhausted -- the difference between a degraded answer and no answer at
     # all, which matters most during a live demo.
-    gemini_fallback_model: str = "gemini-2.5-flash-lite"
+    #
+    # An alias rather than a pinned version on purpose: "gemini-2.5-flash-lite"
+    # was set here first and returned 404 "no longer available to new users",
+    # so the fallback failed exactly when it was needed. The alias follows
+    # whichever lite model is current.
+    gemini_fallback_model: str = "gemini-flash-lite-latest"
 
     # Local disk in development; Firebase Storage is the production target.
     upload_dir: str = "./uploads"

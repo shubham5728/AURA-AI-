@@ -102,6 +102,33 @@ def test_no_range_is_invented_for_unknown_markers():
     assert resolve_range("Serum Zinc", None, None) == (None, None)
 
 
+@pytest.mark.parametrize(
+    "printed,expected",
+    [
+        # Every spelling below is copied from a real Indian CBC report.
+        ("Total WBC Count", "wbc"),
+        ("TLC", "wbc"),
+        ("R.B.C. count", "rbc"),
+        ("Platelet Count", "platelets"),
+        ("RDW-CV", "rdw"),
+        ("PCV", "hct"),
+        ("Haematocrit", "hct"),
+        ("Polymorphs", "neutrophils"),
+    ],
+)
+def test_cbc_names_from_a_real_report(printed, expected):
+    assert canonical_name(printed) == expected
+
+
+@pytest.mark.parametrize(
+    "canonical,expected",
+    [("hct", "Haematocrit (HCT)"), ("mcv", "MCV"), ("rdw", "RDW-CV"), ("wbc", "WBC Count")],
+)
+def test_abbreviations_are_not_title_cased(canonical, expected):
+    """Title-casing produced "Hct", "Mcv" and "Rdw Cv" on a real report."""
+    assert display_name(canonical) == expected
+
+
 def test_display_names_are_human_readable():
     assert display_name("hba1c") == "HbA1c"
     assert display_name("ldl") == "LDL Cholesterol"

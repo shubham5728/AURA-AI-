@@ -32,6 +32,24 @@ DEFAULT_RANGES = {
     "uric_acid": (3.4, 7.0, "mg/dL"),
     "alt": (7.0, 56.0, "U/L"),
     "ast": (10.0, 40.0, "U/L"),
+    # Complete Blood Count. The most commonly ordered panel in Indian labs, and
+    # the first real report tested against this module was a CBC -- none of
+    # which was covered here.
+    "wbc": (4000.0, 11000.0, "/cmm"),
+    "rbc": (4.5, 5.9, "mil/cmm"),
+    "platelets": (150000.0, 400000.0, "/cmm"),
+    "hct": (36.0, 46.0, "%"),
+    "mcv": (76.0, 96.0, "fL"),
+    "mch": (27.0, 32.0, "pg"),
+    "mchc": (32.0, 36.0, "g/dL"),
+    "rdw": (11.5, 14.5, "%"),
+    "mpv": (7.4, 11.0, "fL"),
+    "pdw": (11.0, 17.0, "fL"),
+    "neutrophils": (40.0, 75.0, "%"),
+    "lymphocytes": (20.0, 40.0, "%"),
+    "eosinophils": (1.0, 6.0, "%"),
+    "monocytes": (2.0, 10.0, "%"),
+    "basophils": (0.0, 1.0, "%"),
 }
 
 # Maps the many printed spellings onto one canonical key.
@@ -78,6 +96,39 @@ ALIASES = {
     "ast": "ast",
     "sgot": "ast",
     "ast (sgot)": "ast",
+    # CBC. Spellings taken from a real report: labs write "Total WBC Count",
+    # "R.B.C. count", "RDW-CV" -- none of which match a bare abbreviation.
+    "wbc": "wbc",
+    "total wbc count": "wbc",
+    "total leucocyte count": "wbc",
+    "tlc": "wbc",
+    "white blood cell count": "wbc",
+    "rbc": "rbc",
+    "r.b.c. count": "rbc",
+    "rbc count": "rbc",
+    "red blood cell count": "rbc",
+    "total rbc count": "rbc",
+    "platelet count": "platelets",
+    "platelets": "platelets",
+    "plt": "platelets",
+    "hct": "hct",
+    "haematocrit": "hct",
+    "hematocrit": "hct",
+    "pcv": "hct",
+    "mcv": "mcv",
+    "mch": "mch",
+    "mchc": "mchc",
+    "rdw": "rdw",
+    "rdw cv": "rdw",
+    "rdw-cv": "rdw",
+    "mpv": "mpv",
+    "pdw": "pdw",
+    "neutrophils": "neutrophils",
+    "polymorphs": "neutrophils",
+    "lymphocytes": "lymphocytes",
+    "eosinophils": "eosinophils",
+    "monocytes": "monocytes",
+    "basophils": "basophils",
 }
 
 
@@ -164,6 +215,9 @@ def flag_value(
 
 def display_name(canonical: str) -> str:
     """Human-readable label for the UI."""
+    # Medical abbreviations must not be title-cased. Falling through to .title()
+    # produced "Hct", "Mcv", "Mchc" and "Rdw Cv" on a real report, which reads
+    # as a bug to anyone who knows what those tests are.
     special = {
         "hba1c": "HbA1c",
         "ldl": "LDL Cholesterol",
@@ -173,6 +227,15 @@ def display_name(canonical: str) -> str:
         "ast": "AST (SGOT)",
         "vitamin_b12": "Vitamin B12",
         "vitamin_d": "Vitamin D",
+        "wbc": "WBC Count",
+        "rbc": "RBC Count",
+        "hct": "Haematocrit (HCT)",
+        "mcv": "MCV",
+        "mch": "MCH",
+        "mchc": "MCHC",
+        "rdw": "RDW-CV",
+        "mpv": "MPV",
+        "pdw": "PDW",
     }
     if canonical in special:
         return special[canonical]
