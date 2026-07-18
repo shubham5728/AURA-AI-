@@ -85,9 +85,9 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
     >
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'baseline' }}>
-          <b style={{ fontSize: 17 }}>{marker.label}</b>
+          <b className="t-card">{marker.label}</b>
           <span style={{ whiteSpace: 'nowrap' }}>
-            <span style={{ fontSize: 21, fontWeight: 700, color: abnormal ? status.color : undefined }}>
+            <span className="t-num" style={{ fontSize: 'var(--text-section)', fontWeight: 'var(--w-bold)', color: abnormal ? status.color : undefined }}>
               {marker.value.toLocaleString()}
             </span>
             {marker.unit && <small style={{ opacity: 0.6 }}> {marker.unit}</small>}
@@ -95,7 +95,7 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
         </div>
 
         {description && (
-          <div style={{ fontSize: 14.5, opacity: 0.75, marginTop: 3 }}>{description}</div>
+          <div className="t-body" style={{ opacity: 0.75, marginTop: 'var(--space-1)' }}>{description}</div>
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.7rem', marginTop: '0.5rem' }}>
@@ -127,12 +127,12 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
           )}
 
           {normalRange && (
-            <small style={{ opacity: 0.65, whiteSpace: 'nowrap', fontSize: 13.5 }}>
+            <small className="t-small t-num" style={{ opacity: 0.65, whiteSpace: 'nowrap' }}>
               {normalRange}
             </small>
           )}
 
-          <span style={{ fontSize: 13.5, fontWeight: 700, color: status.color, whiteSpace: 'nowrap', minWidth: 92, textAlign: 'right' }}>
+          <span className="t-small" style={{ fontWeight: 'var(--w-bold)', color: status.color, whiteSpace: 'nowrap', minWidth: 92, textAlign: 'right' }}>
             {status.label}
           </span>
         </div>
@@ -141,7 +141,7 @@ export default function BiomarkerRow({ marker }: { marker: Biomarker }) {
             lab called this normal and AURA does not overrule it -- this only
             says the value sits close to a boundary. */}
         {nearEdge && !abnormal && (
-          <div style={{ fontSize: 13, opacity: 0.7, marginTop: 4 }}>
+          <div className="t-small" style={{ opacity: 0.7, marginTop: 'var(--space-1)' }}>
             Sits near the edge of the normal range.
           </div>
         )}

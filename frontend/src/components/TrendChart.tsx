@@ -59,7 +59,7 @@ export default function TrendChart({ trend }: { trend: Trend }) {
     <article className="card" style={{ padding: '1.25rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
         <div>
-          <b>{trend.label}</b>
+          <b className="t-card">{trend.label}</b>
           {trend.unit && <small style={{ opacity: 0.65 }}> · {trend.unit}</small>}
         </div>
         <strong style={{ color: outOfRange ? COLOR.out : undefined }}>

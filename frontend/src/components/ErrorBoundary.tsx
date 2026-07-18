@@ -56,7 +56,7 @@ export default class ErrorBoundary extends Component<Props, State> {
         </div>
         <details style={{ marginTop: '1rem', opacity: 0.6, maxWidth: 560 }}>
           <summary style={{ cursor: 'pointer' }}>Technical details</summary>
-          <pre style={{ textAlign: 'left', overflow: 'auto', fontSize: 12 }}>
+          <pre className="t-caption" style={{ textAlign: 'left', overflow: 'auto' }}>
             {this.state.error.message}
           </pre>
         </details>

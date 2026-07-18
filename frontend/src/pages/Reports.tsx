@@ -61,7 +61,7 @@ function ReportCard({ report }: { report: Report }) {
 
           {/* Named up front so the finding is visible without expanding. */}
           {abnormal.length > 0 && !open && (
-            <p style={{ fontSize: 13, opacity: 0.75, marginTop: '0.35rem' }}>
+            <p className="t-small" style={{ opacity: 0.75, marginTop: 'var(--space-1)' }}>
               {abnormal.map((m) => m.label).join(' · ')}
             </p>
           )}
@@ -91,24 +91,24 @@ function ReportCard({ report }: { report: Report }) {
             borderRadius: 12, background: 'rgba(128,128,128,0.07)',
           }}>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#16a34a' }}>
+              <div className="t-num" style={{ fontSize: 'var(--text-section)', fontWeight: 'var(--w-black)', color: '#16a34a' }}>
                 {markers.length - abnormal.length}
               </div>
               <small style={{ opacity: 0.7 }}>within range</small>
             </div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: abnormal.length ? '#d97706' : undefined, opacity: abnormal.length ? 1 : 0.4 }}>
+              <div className="t-num" style={{ fontSize: 'var(--text-section)', fontWeight: 'var(--w-black)', color: abnormal.length ? '#d97706' : undefined, opacity: abnormal.length ? 1 : 0.4 }}>
                 {abnormal.length}
               </div>
               <small style={{ opacity: 0.7 }}>need attention</small>
             </div>
             <div>
-              <div style={{ fontSize: 22, fontWeight: 800, opacity: 0.75 }}>{markers.length}</div>
+              <div className="t-num" style={{ fontSize: 'var(--text-section)', fontWeight: 'var(--w-black)', opacity: 0.75 }}>{markers.length}</div>
               <small style={{ opacity: 0.7 }}>tests read</small>
             </div>
 
             {abnormal.length > 0 && (
-              <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: 13 }}>
+              <label className="t-small" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <input type="checkbox" checked={onlyAbnormal}
                   onChange={(e) => setOnlyAbnormal(e.target.checked)} />
                 Show only results needing attention
@@ -124,14 +124,14 @@ function ReportCard({ report }: { report: Report }) {
             return (
               <section key={panel.name} style={{ marginBottom: '1.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.6rem', flexWrap: 'wrap' }}>
-                  <h4 style={{ margin: 0, fontSize: 17 }}>{panel.name}</h4>
+                  <h4 className="t-card" style={{ margin: 0 }}>{panel.name}</h4>
                   {/* What the panel is for, so the grouping means something to
                       someone who does not already know these tests. */}
-                  <span style={{ fontSize: 14, opacity: 0.7 }}>
+                  <span className="t-body" style={{ opacity: 0.7 }}>
                     {PANEL_PURPOSE[panel.name] || ''}
                   </span>
                   {flagged > 0 && (
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#d97706' }}>
+                    <span className="t-small" style={{ fontWeight: 'var(--w-bold)', color: '#d97706' }}>
                       {flagged} need{flagged === 1 ? 's' : ''} attention
                     </span>
                   )}
@@ -144,8 +144,7 @@ function ReportCard({ report }: { report: Report }) {
             );
           })}
 
-          <div style={{
-            fontSize: 14,
+          <div className="t-body" style={{
             opacity: 0.8,
             borderTop: '1px solid rgba(128,128,128,0.14)',
             paddingTop: '0.85rem',
