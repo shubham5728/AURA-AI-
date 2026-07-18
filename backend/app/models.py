@@ -52,6 +52,9 @@ class User(Base):
     medications: Mapped[List["Medication"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    chat_messages: Mapped[List["ChatMessage"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Profile(Base):
@@ -159,6 +162,30 @@ class DailyLog(Base):
     calories_out: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="daily_logs")
+
+
+class ChatMessage(Base):
+    """One turn of conversation.
+
+    `agent_role` records which specialist handled an assistant turn, so the
+    interface can show that routing happened -- the multi-agent design is
+    visible to the user even though the deployment is unified.
+    """
+
+    __tablename__ = "chat_messages"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    role: Mapped[str] = mapped_column(String(16))  # "user" | "assistant"
+    content: Mapped[str] = mapped_column(Text)
+    agent_role: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="chat_messages")
 
 
 class Medication(Base):
