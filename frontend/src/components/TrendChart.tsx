@@ -16,10 +16,12 @@ const W = 520;
 const H = 150;
 const PAD = { top: 12, right: 14, bottom: 22, left: 40 };
 
+// Matches the report card: green means inside the reference range, amber means
+// outside it. The same colour must mean the same thing on both screens.
 const COLOR = {
-  normal: '#2563eb',
-  out: '#f59e0b',
-  band: 'rgba(37, 99, 235, 0.10)',
+  normal: '#16a34a',
+  out: '#d97706',
+  band: 'rgba(22, 163, 74, 0.18)',
 };
 
 export default function TrendChart({ trend }: { trend: Trend }) {

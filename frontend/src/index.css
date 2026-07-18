@@ -33,3 +33,56 @@
   height: 0;
   display: none;
 }
+
+/* Form controls
+   -------------
+   The original app styled inputs only inside the login card, so every field on
+   the newer screens rendered as bare text: the label and the input ran together
+   on one line and the input had no visible box at all. */
+.page label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+
+/* The control on its own line, under its label. */
+.page label > input,
+.page label > select,
+.page label > textarea {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.page label > input:focus,
+.page label > select:focus,
+.page label > textarea:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+/* Checkboxes stay beside their text rather than being stretched to full width
+   by the rule above. */
+.page label > input[type='checkbox'] {
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+.page label small {
+  display: block;
+  font-weight: 400;
+  opacity: 0.7;
+  margin-top: 4px;
+}
