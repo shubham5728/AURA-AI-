@@ -11,6 +11,7 @@ Two jobs, both deliberately kept out of the model's hands:
    occasionally mislabel a normal value as high; comparing in Python cannot.
 """
 
+import re
 from typing import Optional, Tuple
 
 # Fallback ranges, used only when the report itself does not print one.
@@ -60,7 +61,9 @@ ALIASES = {
     "hb": "hemoglobin",
     "vitamin d": "vitamin_d",
     "25-oh vitamin d": "vitamin_d",
+    "25 oh vitamin d": "vitamin_d",
     "vitamin d3": "vitamin_d",
+    "vitamin d total": "vitamin_d",
     "vitamin b12": "vitamin_b12",
     "b12": "vitamin_b12",
     "cobalamin": "vitamin_b12",
@@ -78,17 +81,47 @@ ALIASES = {
 }
 
 
+def _normalise_spelling(text: str) -> str:
+    """Collapse whitespace, case, and British/American spelling variants."""
+    cleaned = text.strip().lower().replace("_", " ")
+    cleaned = cleaned.replace("haemoglobin", "hemoglobin")
+    cleaned = cleaned.replace("glycated", "glycosylated")
+    return " ".join(cleaned.split())
+
+
+def _slug(text: str) -> str:
+    return text.replace(" ", "_").replace("/", "_").replace("-", "_")
+
+
 def canonical_name(raw: str) -> str:
     """Normalise a printed test name to a canonical key.
+
+    Real reports qualify test names with a parenthetical -- "SGPT (ALT)",
+    "Glycosylated Haemoglobin (HbA1c)", "Vitamin D (25-OH)". Exact matching
+    misses all of these, which silently splits one marker into several and
+    breaks its trend line. So three attempts are made, in order of confidence:
+    the full name, the name with the parenthetical removed, and the contents of
+    the parenthetical on its own.
 
     Unknown tests pass through as a slug rather than being dropped -- storing an
     unrecognised marker is strictly better than losing the user's data.
     """
-    cleaned = raw.strip().lower().replace("_", " ")
-    cleaned = " ".join(cleaned.split())
+    cleaned = _normalise_spelling(raw)
     if cleaned in ALIASES:
         return ALIASES[cleaned]
-    return cleaned.replace(" ", "_").replace("/", "_")
+
+    outside = _normalise_spelling(re.sub(r"\(.*?\)", " ", cleaned))
+    if outside and outside in ALIASES:
+        return ALIASES[outside]
+
+    for inner in re.findall(r"\((.*?)\)", cleaned):
+        inner_key = _normalise_spelling(inner)
+        if inner_key in ALIASES:
+            return ALIASES[inner_key]
+
+    # Prefer the un-parenthesised form so "Serum Zinc (Zn)" and "Serum Zinc"
+    # still land on the same key even though neither is a known alias.
+    return _slug(outside or cleaned)
 
 
 def resolve_range(

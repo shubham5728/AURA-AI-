@@ -30,9 +30,37 @@ def test_indian_lab_abbreviations():
     assert canonical_name("FBS") == "fasting_glucose"
 
 
+@pytest.mark.parametrize(
+    "printed,expected",
+    [
+        # Every one of these came back from a real extraction run and was
+        # missed by exact matching, silently splitting one marker into several.
+        ("Glycosylated Haemoglobin (HbA1c)", "hba1c"),
+        ("SGPT (ALT)", "alt"),
+        ("SGOT (AST)", "ast"),
+        ("Vitamin D (25-OH)", "vitamin_d"),
+        ("Haemoglobin (Hb)", "hemoglobin"),
+        ("Fasting Blood Sugar (FBS)", "fasting_glucose"),
+    ],
+)
+def test_parenthetical_qualifiers_still_resolve(printed, expected):
+    """Labs qualify test names in brackets. Both halves must be tried."""
+    assert canonical_name(printed) == expected
+
+
+def test_british_and_american_spellings_agree():
+    assert canonical_name("Haemoglobin") == canonical_name("Hemoglobin")
+    assert canonical_name("Glycated Hemoglobin") == canonical_name("Glycosylated Hemoglobin")
+
+
 def test_unknown_marker_is_kept_not_dropped():
     """Storing an unrecognised marker beats losing the user's data."""
     assert canonical_name("Serum Zinc") == "serum_zinc"
+
+
+def test_unknown_marker_with_qualifier_still_groups():
+    """Unknown markers must not split on their bracket either."""
+    assert canonical_name("Serum Zinc (Zn)") == canonical_name("Serum Zinc")
 
 
 @pytest.mark.parametrize(
