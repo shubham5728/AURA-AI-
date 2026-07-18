@@ -27,11 +27,12 @@ class LLMClient(ABC):
 
 
 class GeminiClient(LLMClient):
-    def __init__(self, api_key: str, model: str):
+    def __init__(self, api_key: str, model: str, fallback_model: str = ""):
         from google import genai
 
         self._client = genai.Client(api_key=api_key)
         self._model = model
+        self._fallback_model = fallback_model
 
     def _generate(self, contents, system: Optional[str] = None) -> str:
         from google.genai import types
@@ -39,13 +40,29 @@ class GeminiClient(LLMClient):
         config = (
             types.GenerateContentConfig(system_instruction=system) if system else None
         )
+
         try:
             response = self._client.models.generate_content(
                 model=self._model, contents=contents, config=config
             )
         except Exception as exc:
-            logger.warning("Generation failed: %s", exc)
-            raise LLMError(str(exc)) from exc
+            # Free-tier quota is counted per model, so an exhausted primary does
+            # not mean an exhausted key. A shorter answer from a lighter model
+            # beats an error page mid-conversation.
+            from app.services.parser import is_quota_error
+
+            if not (self._fallback_model and is_quota_error(exc)):
+                logger.warning("Generation failed: %s", exc)
+                raise LLMError(str(exc)) from exc
+
+            logger.warning("Primary model out of quota; retrying on %s", self._fallback_model)
+            try:
+                response = self._client.models.generate_content(
+                    model=self._fallback_model, contents=contents, config=config
+                )
+            except Exception as fallback_exc:
+                logger.warning("Fallback model also failed: %s", fallback_exc)
+                raise LLMError(str(fallback_exc)) from fallback_exc
 
         text = (response.text or "").strip()
         if not text:
@@ -92,7 +109,11 @@ def get_llm() -> LLMClient:
 
     settings = get_settings()
     if settings.gemini_api_key:
-        return GeminiClient(settings.gemini_api_key, settings.gemini_model)
+        return GeminiClient(
+            settings.gemini_api_key,
+            settings.gemini_model,
+            settings.gemini_fallback_model,
+        )
 
     logger.warning("GEMINI_API_KEY not set -- using MockLLMClient.")
     return MockLLMClient()

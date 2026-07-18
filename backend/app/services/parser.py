@@ -153,31 +153,53 @@ def normalise(payload: dict) -> ParsedReport:
     )
 
 
+def is_quota_error(error: Exception) -> bool:
+    text = str(error)
+    return "RESOURCE_EXHAUSTED" in text or "429" in text
+
+
 class GeminiReportParser(ReportParser):
     """Multimodal extraction via the Gemini API."""
 
-    def __init__(self, api_key: str, model: str):
+    def __init__(self, api_key: str, model: str, fallback_model: str = ""):
         from google import genai
 
         self._client = genai.Client(api_key=api_key)
         self._model = model
+        self._fallback_model = fallback_model
 
     def parse(self, file_bytes: bytes, mime_type: str) -> ParsedReport:
         from google.genai import types
 
         last_error: Optional[Exception] = None
 
-        # One retry only. A second malformed response usually means the image is
-        # the problem, not the model, and further retries just burn demo time.
-        for attempt in (1, 2):
+        # Two attempts on the primary model, then one on the fallback. A second
+        # malformed response usually means the image is the problem rather than
+        # the model, so further retries only burn demo time -- but a quota error
+        # is about the model, and a different model may still have budget.
+        models = [self._model, self._model]
+        if self._fallback_model:
+            models.append(self._fallback_model)
+
+        for attempt, model in enumerate(models, start=1):
+            # Only reach for the fallback if the primary actually ran out of
+            # quota. Falling back on a parsing failure would just repeat the
+            # same failure on a weaker model.
+            if model == self._fallback_model and not (
+                last_error and is_quota_error(last_error)
+            ):
+                break
+
             try:
                 response = self._client.models.generate_content(
-                    model=self._model,
+                    model=model,
                     contents=[
                         types.Part.from_bytes(data=file_bytes, mime_type=mime_type),
                         EXTRACTION_PROMPT,
                     ],
                 )
+                if model == self._fallback_model:
+                    logger.warning("Primary model out of quota; parsed with %s", model)
                 return normalise(_extract_json(response.text or ""))
             except ParseError as exc:
                 last_error = exc
@@ -190,7 +212,7 @@ class GeminiReportParser(ReportParser):
         # puts a stack of quota metadata in front of someone who uploaded a
         # blood report, so the common causes get a plain-language message.
         detail = str(last_error)
-        if "RESOURCE_EXHAUSTED" in detail or "429" in detail:
+        if is_quota_error(last_error) if last_error else False:
             raise ParseError(
                 "The report reader has hit its daily limit and could not read this "
                 "file. Your upload was saved -- try again later, or enter the "
@@ -243,7 +265,11 @@ def get_parser() -> ReportParser:
 
     settings = get_settings()
     if settings.gemini_api_key:
-        return GeminiReportParser(settings.gemini_api_key, settings.gemini_model)
+        return GeminiReportParser(
+            settings.gemini_api_key,
+            settings.gemini_model,
+            settings.gemini_fallback_model,
+        )
 
     logger.warning("GEMINI_API_KEY not set -- falling back to MockReportParser.")
     return MockReportParser()

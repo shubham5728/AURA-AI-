@@ -174,8 +174,33 @@ python -m venv .venv
 
 pip install -r requirements.txt
 cp .env.example .env
+
+alembic upgrade head    # creates the database schema
 uvicorn app.main:app --reload
 ```
+
+Then the frontend, in a second terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173** and sign in with any email address.
+
+### Database migrations
+
+The schema is owned by Alembic. `alembic upgrade head` before first run, and again after pulling changes.
+
+After changing a model:
+
+```bash
+alembic revision --autogenerate -m "what changed"
+alembic upgrade head
+```
+
+`create_all()` is deliberately not used. It only creates missing *tables* — it never adds a column to a table that already exists, so a new field leaves the app querying something the database does not have.
 
 Open **http://127.0.0.1:8000/docs** for the interactive API documentation.
 

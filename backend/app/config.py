@@ -29,6 +29,12 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     gemini_model: str = "gemini-2.5-flash"
 
+    # Used when the primary model returns a quota error. Free-tier limits are
+    # per-model, so a lighter model usually still has budget when the main one
+    # is exhausted -- the difference between a degraded answer and no answer at
+    # all, which matters most during a live demo.
+    gemini_fallback_model: str = "gemini-2.5-flash-lite"
+
     # Local disk in development; Firebase Storage is the production target.
     upload_dir: str = "./uploads"
     max_upload_mb: int = 10

@@ -17,9 +17,15 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # create_all is fine while the schema is still moving. Switch to Alembic
-    # before any data exists that cannot be thrown away.
-    Base.metadata.create_all(bind=engine)
+    # Schema is owned by Alembic -- run `alembic upgrade head`.
+    #
+    # create_all used to run here and was removed rather than kept as a
+    # convenience. It only ever creates missing tables; it never adds a column
+    # to a table that already exists. Adding `medications.last_taken_on` under
+    # create_all left the app querying a column the database did not have, and
+    # every request touching medications returned a 500. Worse, because
+    # create_all had already produced the full schema, Alembic's autogenerate
+    # saw nothing to do and wrote an empty migration.
     init_firebase()
     if settings.dev_auth_enabled:
         logger.warning(

@@ -92,6 +92,7 @@ def _parser_that_fails_with(error: str) -> GeminiReportParser:
 
     parser._client = _Client()
     parser._model = "test-model"
+    parser._fallback_model = ""
     return parser
 
 
@@ -115,6 +116,54 @@ def test_provider_errors_become_readable_messages(provider_error, expected):
     assert expected in message
     for leak in ("RESOURCE_EXHAUSTED", "quotaMetric", "PERMISSION_DENIED", "429"):
         assert leak not in message
+
+
+def _parser_with_fallback(errors, fallback="fallback-model"):
+    """A parser whose client raises the given errors in order, then succeeds."""
+    parser = GeminiReportParser.__new__(GeminiReportParser)
+    calls = []
+
+    class _Models:
+        def generate_content(self, *, model, contents):
+            calls.append(model)
+            if calls_remaining := errors[len(calls) - 1] if len(calls) <= len(errors) else None:
+                raise RuntimeError(calls_remaining)
+
+            class _R:
+                text = '{"tests":[{"name":"HbA1c","value":6.4,"unit":"%"}]}'
+
+            return _R()
+
+    class _Client:
+        models = _Models()
+
+    parser._client = _Client()
+    parser._model = "primary-model"
+    parser._fallback_model = fallback
+    return parser, calls
+
+
+def test_quota_error_falls_back_to_the_lighter_model():
+    """Free-tier limits are per-model, so a quota failure is worth retrying
+    elsewhere rather than giving up on the upload."""
+    quota = "429 RESOURCE_EXHAUSTED quota exceeded"
+    parser, calls = _parser_with_fallback([quota, quota])
+
+    result = parser.parse(b"x", "image/png")
+
+    assert calls == ["primary-model", "primary-model", "fallback-model"]
+    assert result.tests[0].name == "HbA1c"
+
+
+def test_non_quota_failure_does_not_reach_for_the_fallback():
+    """A malformed image fails the same way on a weaker model. Retrying there
+    only costs time and a second API call."""
+    parser, calls = _parser_with_fallback(["connection reset", "connection reset"])
+
+    with pytest.raises(ParseError):
+        parser.parse(b"x", "image/png")
+
+    assert "fallback-model" not in calls
 
 
 def test_failure_message_tells_the_user_their_upload_survived():
