@@ -8,6 +8,7 @@ stray characters, and rows that cannot be read at all.
 import pytest
 
 from app.services.parser import (
+    GeminiReportParser,
     MockReportParser,
     ParseError,
     _extract_json,
@@ -73,6 +74,54 @@ def test_unexpected_report_type_is_coerced():
 
 def test_missing_tests_key_yields_empty_report():
     assert normalise({}).tests == []
+
+
+def _parser_that_fails_with(error: str) -> GeminiReportParser:
+    """A GeminiReportParser whose API client always raises.
+
+    Built with __new__ so no real client is constructed and no key is needed.
+    """
+    parser = GeminiReportParser.__new__(GeminiReportParser)
+
+    class _Models:
+        def generate_content(self, **_kwargs):
+            raise RuntimeError(error)
+
+    class _Client:
+        models = _Models()
+
+    parser._client = _Client()
+    parser._model = "test-model"
+    return parser
+
+
+@pytest.mark.parametrize(
+    "provider_error,expected",
+    [
+        (
+            "429 RESOURCE_EXHAUSTED {'error': {'code': 429, 'quotaMetric': 'generate_content'}}",
+            "daily limit",
+        ),
+        ("403 PERMISSION_DENIED invalid API_KEY", "not configured"),
+        ("connection reset by peer", "could not be read"),
+    ],
+)
+def test_provider_errors_become_readable_messages(provider_error, expected):
+    """Someone who uploaded a blood report must not be shown quota JSON."""
+    with pytest.raises(ParseError) as exc:
+        _parser_that_fails_with(provider_error).parse(b"x", "image/png")
+
+    message = str(exc.value)
+    assert expected in message
+    for leak in ("RESOURCE_EXHAUSTED", "quotaMetric", "PERMISSION_DENIED", "429"):
+        assert leak not in message
+
+
+def test_failure_message_tells_the_user_their_upload_survived():
+    """The file is kept on a failed parse, so the message must say so."""
+    with pytest.raises(ParseError) as exc:
+        _parser_that_fails_with("boom").parse(b"x", "image/png")
+    assert "saved" in str(exc.value)
 
 
 def test_mock_parser_returns_usable_sample():

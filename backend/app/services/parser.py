@@ -186,7 +186,25 @@ class GeminiReportParser(ReportParser):
                 last_error = exc
                 logger.warning("Extraction attempt %s failed: %s", attempt, exc)
 
-        raise ParseError(f"Extraction failed after 2 attempts: {last_error}")
+        # Provider errors carry a full JSON payload. Surfacing that verbatim
+        # puts a stack of quota metadata in front of someone who uploaded a
+        # blood report, so the common causes get a plain-language message.
+        detail = str(last_error)
+        if "RESOURCE_EXHAUSTED" in detail or "429" in detail:
+            raise ParseError(
+                "The report reader has hit its daily limit and could not read this "
+                "file. Your upload was saved -- try again later, or enter the "
+                "values manually."
+            )
+        if "PERMISSION_DENIED" in detail or "API_KEY" in detail.upper():
+            raise ParseError(
+                "The report reader is not configured correctly. Please contact "
+                "support -- your upload was saved."
+            )
+        raise ParseError(
+            "This file could not be read automatically. Your upload was saved, so "
+            "you can retry or enter the values manually."
+        )
 
 
 class MockReportParser(ReportParser):
