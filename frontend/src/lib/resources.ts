@@ -182,6 +182,11 @@ const NOT_MODELLED = [
   'simulations',
   'visual_scans',
   'content',
+  'emergency_profiles',
+  'family_members',
+  'health_memories',
+  'journey_milestones',
+  'wellness_personas',
 ];
 
 const HANDLERS: Record<string, () => Promise<Row[]>> = {
