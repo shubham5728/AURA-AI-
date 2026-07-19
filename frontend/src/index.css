@@ -163,3 +163,35 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 .page-head{margin-bottom:var(--space-6)}
 .page-head h1{font-size:var(--text-page);line-height:var(--lh-page);font-weight:var(--w-black);margin-bottom:var(--space-2)}
 .page-head p{font-size:var(--text-lead);line-height:var(--lh-lead);opacity:.72;margin:0;max-width:62ch}
+
+/* Chat + trace layout
+   -------------------
+   The left column was 230px, sized for a list of recent message titles. It now
+   holds the trace panel, whose rows carry a label, a duration and a sentence of
+   detail -- at 230px every phrase broke onto its own line.
+
+   It also had no overflow of its own while .chat-layout clips, so anything
+   past the fold was simply cut off with no way to reach it. min-height:0 is
+   the part that matters: a grid child defaults to min-height:auto and refuses
+   to shrink, so overflow-y never engages without it. */
+.chat-layout {
+  grid-template-columns: minmax(320px, 360px) 1fr;
+}
+
+.chat-history {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 980px) {
+  /* Stacked rather than hidden. On a narrow screen the trace is still the
+     thing worth seeing, so it moves below the conversation instead of
+     disappearing. */
+  .chat-history {
+    display: block;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+    overflow: visible;
+  }
+}
