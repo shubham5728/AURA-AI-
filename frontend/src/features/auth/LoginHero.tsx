@@ -82,8 +82,14 @@ const SIZE = 520;
 const C = SIZE / 2;
 const ORBIT = 206;
 const NODE = 36;
-const FIGURE_W = 286;
-const FIGURE_H = 462;
+// The source is square, so a box taller than it is wide leaves the top empty
+// under yMax alignment and renders the figure low. The box is square and
+// centred instead, which is why the figure now sits inside the ring rather
+// than below it.
+const FIGURE = 306;
+/** Nudged above the orbit centre so the body reads as centred once its faded
+ *  lower edge is taken into account. */
+const FIGURE_LIFT = 8;
 
 const MOTES = [
   [58, 104], [452, 78], [92, 420], [470, 386], [268, 40],
@@ -162,9 +168,9 @@ export default function LoginHero() {
           className="hero-breathe" style={{ transition: 'all .6s ease' }} />
 
         <image href="/images/aura-real-digital-twin.png"
-          x={C - FIGURE_W / 2} y={C - FIGURE_H / 2 + 22}
-          width={FIGURE_W} height={FIGURE_H}
-          preserveAspectRatio="xMidYMax meet"
+          x={C - FIGURE / 2} y={C - FIGURE / 2 - FIGURE_LIFT}
+          width={FIGURE} height={FIGURE}
+          preserveAspectRatio="xMidYMid meet"
           mask="url(#heroMask)" />
 
         <rect x={C - 96} width={192} height={2} fill="url(#heroScan)"
@@ -174,7 +180,7 @@ export default function LoginHero() {
             disc read as a prop the figure was standing on; concentric rings
             that pulse outward read as a scanning platform. */}
         {[0, 1, 2, 3].map((ring) => (
-          <ellipse key={ring} cx={C} cy={C + 196}
+          <ellipse key={ring} cx={C} cy={C + 150}
             rx={54 + ring * 32} ry={9 + ring * 5}
             fill="none" stroke={accent}
             strokeOpacity={0.42 - ring * 0.08}
