@@ -296,3 +296,41 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   outline: 2px solid var(--blue);
   outline-offset: 2px;
 }
+
+/* Login hero
+   ----------
+   The orbit turns very slowly -- a full revolution takes two minutes. Fast
+   enough to read as alive on a page someone looks at for ten seconds, slow
+   enough that it never competes with the sign-in form beside it. */
+@keyframes login-orbit {
+  to { transform: rotate(360deg); }
+}
+
+.login-hero-orbit {
+  animation: login-orbit 120s linear infinite;
+}
+
+.login-hero-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 14px;
+  margin-top: var(--space-4);
+}
+
+.login-hero-legend span {
+  font-size: var(--text-caption);
+  font-weight: var(--w-semibold);
+  color: #7dd3fc;
+  opacity: 0.85;
+}
+
+/* The old fixed-height frame clipped the illustration. The hero is an SVG with
+   its own viewBox now, so it scales instead of being cropped. */
+.auth-twin {
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-hero-orbit { animation: none; }
+}
