@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowRight, Dumbbell, Pill, RotateCcw, Salad, Sparkles, Stethoscope, TrendingUp,
 } from 'lucide-react';
+import Markdown from '../components/Markdown';
 import DigitalTwinGraph from '../components/twin/DigitalTwinGraph';
 import type { GraphRole } from '../components/twin/DigitalTwinGraph';
 import ReasoningPanel from '../components/twin/ReasoningPanel';
@@ -196,23 +197,10 @@ export default function AgentsPage() {
           {reply && (
             <section className="card" style={{ padding: '1.25rem 1.5rem', marginTop: '1.5rem' }}>
               <span className="card-label">{reply.role_label.toUpperCase()} ANSWERED</span>
-              <p style={{ marginTop: '0.6rem', whiteSpace: 'pre-wrap' }}>{reply.reply}</p>
+              <div style={{ marginTop: '0.6rem' }}><Markdown text={reply.reply}/></div>
             </section>
           )}
 
-          <section className="card" style={{ padding: '1.25rem 1.5rem', marginTop: '1.5rem' }}>
-            <span className="card-label">HOW A QUESTION IS ROUTED</span>
-            <ol style={{ margin: '0.6rem 0 0', paddingLeft: '1.2rem', lineHeight: 1.9 }}>
-              <li><b>Safety screen first.</b> Emergencies are intercepted before any model is called, not filtered afterwards.</li>
-              <li><b>Keyword routing.</b> Resolves most questions instantly, without a network call.</li>
-              <li><b>Model routing</b> only when keywords are inconclusive, so the common path stays off the network.</li>
-              <li><b>Context is assembled for that role alone</b> — de-identified, and limited to its own slices.</li>
-            </ol>
-            <p style={{ marginTop: '0.9rem', fontSize: 14, opacity: 0.75 }}>
-              Select any specialist above to see what it is permitted to read — and what
-              it is refused.
-            </p>
-          </section>
         </>
       )}
     </main>
