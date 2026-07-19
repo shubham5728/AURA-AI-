@@ -58,6 +58,9 @@ class User(Base):
     family_members: Mapped[List["FamilyMember"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    briefings: Mapped[List["DailyBriefing"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Profile(Base):
@@ -165,6 +168,40 @@ class DailyLog(Base):
     calories_out: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="daily_logs")
+
+
+class DailyBriefing(Base):
+    """The narrative shown at the top of the overview, generated once a day.
+
+    Cached rather than generated per page load for three reasons: the free API
+    tier allows twenty calls a day and a homepage would spend them all,
+    generation takes several seconds during which the first screen would be
+    blank, and a briefing that is rewritten on every visit reads as unstable
+    even when the underlying data has not changed.
+
+    `score_at_generation` records what the score was when the text was written.
+    If the score has since moved, the briefing is stale and describes a state
+    the user is no longer in -- worse than showing nothing.
+    """
+
+    __tablename__ = "daily_briefings"
+    __table_args__ = (UniqueConstraint("user_id", "date", name="uq_briefing_user_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    date: Mapped[date] = mapped_column(Date, index=True)
+
+    text: Mapped[str] = mapped_column(Text)
+    # "model" or "computed" -- the interface says which, rather than passing
+    # deterministic fallback text off as generated insight.
+    source: Mapped[str] = mapped_column(String(16), default="computed")
+    score_at_generation: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="briefings")
 
 
 class FamilyMember(Base):
