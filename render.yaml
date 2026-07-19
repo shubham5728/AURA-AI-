@@ -25,13 +25,22 @@ services:
           name: aura-db
           property: connectionString
 
-      # Turns off dev auth, and makes missing Firebase credentials a hard
-      # startup failure rather than a silent downgrade to unverified identities.
+      # Set in the dashboard, because the correct value changes once and the
+      # wrong one fails in opposite directions.
+      #
+      #   development -- dev sign-in works, identity is NOT verified. Only
+      #                  acceptable while the database is empty and no real
+      #                  health data has been uploaded.
+      #   production  -- dev sign-in refused. Requires Firebase credentials;
+      #                  the server exits at boot without them, on purpose.
+      #
+      # Deploy as development to prove the pipeline works, add Firebase, then
+      # switch to production and never switch back.
       - key: ENV
-        value: production
+        sync: false
 
       - key: ALLOW_DEV_AUTH
-        value: "false"
+        sync: false
 
       # Set in the Render dashboard, never committed.
       - key: GEMINI_API_KEY
