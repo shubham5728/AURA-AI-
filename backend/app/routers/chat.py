@@ -26,6 +26,10 @@ class ChatOut(BaseModel):
     emergency: bool
     context_sections: List[str]
     warnings: List[str]
+    # How the reply was produced -- stages, real timings, and the exact
+    # de-identified context sent. Returned so the pipeline can be inspected
+    # while it is used, not only described.
+    trace: dict = {}
 
 
 class ChatTurnOut(BaseModel):
@@ -56,6 +60,7 @@ def send_message(
         emergency=reply.emergency,
         context_sections=reply.context_sections,
         warnings=reply.warnings,
+        trace=reply.trace,
     )
 
 

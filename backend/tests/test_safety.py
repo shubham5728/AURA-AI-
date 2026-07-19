@@ -98,6 +98,27 @@ def test_diagnostic_verdicts_are_flagged(reply):
     assert "diagnosis" in screen_output(reply)
 
 
+@pytest.mark.parametrize(
+    "reply",
+    [
+        # Every one of these came back from a real reply and was wrongly flagged.
+        "If you have any further questions about this, please ask your doctor.",
+        "If you have concerns, discuss them at your next visit.",
+        "Let me know if you have more questions.",
+        "If you have had this before, mention it to your doctor.",
+        "If you have an appointment coming up, raise it then.",
+    ],
+)
+def test_polite_phrasing_is_not_read_as_a_diagnosis(reply):
+    """"you have" alone is not a diagnosis. Flagging it marked correct answers
+    as unsafe, which trains people to ignore the warning entirely."""
+    assert "diagnosis" not in screen_output(reply)
+
+
+def test_a_real_diagnostic_claim_is_still_caught():
+    assert "diagnosis" in screen_output("Based on this, you have hypothyroidism.")
+
+
 def test_hedged_explanation_is_allowed():
     """Explaining what a value can indicate is the product working, not a violation."""
     reply = (

@@ -97,7 +97,13 @@ MEDICATION_ACTION_PATTERNS = [
 # Conclusive diagnostic claims. Hedged discussion ("this can be associated
 # with") is allowed; a verdict is not.
 DIAGNOSIS_PATTERNS = [
-    r"\byou (?:have|are suffering from|are diagnosed with)\b",
+    # "you have" needs a negative lookahead. Without one it fired on "if you
+    # have any further questions, speak to your doctor" -- a sentence that is
+    # the assistant behaving correctly. A warning that flags good answers is
+    # worse than no warning, because it teaches everyone to ignore the panel.
+    r"\byou have\b(?!\s+(?:any|some|no|further|other|more|additional|"
+    r"questions?|concerns?|been|had|a\s+question|an\s+appointment))",
+    r"\byou (?:are suffering from|are diagnosed with|clearly have)\b",
     r"\bthis (?:is|confirms) (?:definitely |certainly )?(?:diabetes|cancer|a tumou?r)\b",
     r"\bi diagnose\b",
 ]

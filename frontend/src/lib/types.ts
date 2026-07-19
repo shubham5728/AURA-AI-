@@ -94,6 +94,39 @@ export interface Interaction {
   description: string;
 }
 
+export interface TraceStage {
+  name: 'safety_in' | 'routing' | 'context' | 'generation' | 'safety_out';
+  label: string;
+  /** Real measured milliseconds. Never estimated. */
+  ms: number;
+  detail: string;
+  data: {
+    blocked?: boolean;
+    category?: string | null;
+    chosen?: string;
+    method?: string;
+    confidence?: string;
+    scores?: Record<string, number>;
+    sections?: string[];
+    /** Slices this role is not permitted -- the restriction being applied. */
+    withheld?: string[];
+    /** Slices it may read but the user has no data for. Not the same thing. */
+    empty?: string[];
+    characters?: number;
+    history_turns?: number;
+    warnings?: string[];
+    numbers_checked?: number;
+    unsupported?: number[];
+  };
+}
+
+export interface Trace {
+  stages: TraceStage[];
+  /** The exact de-identified text the model received. */
+  context_sent: string;
+  total_ms: number;
+}
+
 export interface ChatResponse {
   reply: string;
   role_key: string;
@@ -103,6 +136,7 @@ export interface ChatResponse {
   emergency: boolean;
   context_sections: string[];
   warnings: string[];
+  trace: Trace;
 }
 
 export interface ChatTurn {
