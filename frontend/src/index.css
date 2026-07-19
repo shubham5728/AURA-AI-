@@ -297,40 +297,90 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   outline-offset: 2px;
 }
 
+
 /* Login hero
    ----------
-   The orbit turns very slowly -- a full revolution takes two minutes. Fast
-   enough to read as alive on a page someone looks at for ten seconds, slow
-   enough that it never competes with the sign-in form beside it. */
-@keyframes login-orbit {
-  to { transform: rotate(360deg); }
+   Motion is deliberately slow. Someone spends about ten seconds on this page,
+   so the orbit reads as alive without ever competing with the sign-in form
+   beside it -- a full revolution takes two minutes. */
+@keyframes login-orbit { to { transform: rotate(360deg); } }
+@keyframes login-orbit-counter { to { transform: rotate(-360deg); } }
+
+.login-hero-orbit { animation: login-orbit 120s linear infinite; }
+
+/* Icons counter-rotate at the same rate so they stay upright while their
+   circles travel. */
+.login-hero-counter { animation: login-orbit-counter 120s linear infinite; }
+
+@keyframes hero-breathe {
+  0%, 100% { opacity: .55; transform: scale(1); }
+  50%      { opacity: .8;  transform: scale(1.045); }
 }
 
-.login-hero-orbit {
-  animation: login-orbit 120s linear infinite;
+.hero-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-breathe 5.5s ease-in-out infinite;
 }
+
+@keyframes hero-mote {
+  0%, 100% { opacity: .18; }
+  50%      { opacity: .65; }
+}
+
+.hero-mote { animation: hero-mote 6s ease-in-out infinite; }
 
 .login-hero-legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px 14px;
+  gap: 8px;
   margin-top: var(--space-4);
 }
 
-.login-hero-legend span {
+.hero-pill {
+  border: 1px solid rgba(125, 211, 252, 0.28);
+  background: rgba(11, 37, 69, 0.55);
+  color: #7dd3fc;
+  border-radius: 999px;
+  padding: 5px 13px;
   font-size: var(--text-caption);
   font-weight: var(--w-semibold);
-  color: #7dd3fc;
-  opacity: 0.85;
+  cursor: pointer;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
 }
 
-/* The old fixed-height frame clipped the illustration. The hero is an SVG with
-   its own viewBox now, so it scales instead of being cropped. */
-.auth-twin {
-  height: auto;
+.hero-pill:hover,
+.hero-pill:focus-visible,
+.hero-pill.on {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(125, 211, 252, 0.75);
+  color: #e0f2fe;
 }
+
+/* Fixed height so hovering between specialists does not shift the page. */
+.login-hero-detail {
+  min-height: 76px;
+  margin-top: var(--space-3);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #cfe9ff;
+}
+
+.login-hero-detail b { font-size: var(--text-card); color: #e0f2fe; }
+.login-hero-detail span { font-size: var(--text-small); opacity: .85; }
+.login-hero-detail small { font-size: var(--text-caption); color: #7dd3fc; opacity: .9; }
+.login-hero-detail .hero-hint { opacity: .6; }
+
+/* The old fixed-height frame clipped the illustration. The hero carries its own
+   viewBox now, so it scales rather than being cropped. */
+.auth-twin { height: auto; }
 
 @media (prefers-reduced-motion: reduce) {
-  .login-hero-orbit { animation: none; }
+  .login-hero-orbit,
+  .login-hero-counter,
+  .hero-breathe,
+  .hero-mote { animation: none; }
 }
