@@ -24,5 +24,8 @@ COPY . .
 # Migrations run at boot rather than in the build. The database is not reachable
 # while an image is being built, and the schema must match the code that is
 # about to serve traffic.
-CMD alembic upgrade head && \
-    uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+#
+# `exec` on the last command matters: without it the shell stays as PID 1 and
+# uvicorn never receives SIGTERM, so the host's graceful shutdown becomes a hard
+# kill after its timeout -- dropping in-flight requests on every deploy.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

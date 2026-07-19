@@ -1,11 +1,23 @@
+# Pinned to the versions actually installed and tested against.
+#
+# These drifted once already: pydantic was pinned at 2.10.4 while google-genai
+# required >=2.12.5. Locally that never surfaced, because google-genai was
+# installed after the pin and pip quietly upgraded pydantic in the virtualenv
+# without touching this file. The mismatch only appeared in a clean Docker
+# build, where pip resolves everything from scratch and refused.
+#
+# After adding or upgrading a package, run `pip freeze` and update this file to
+# match. A requirements file that disagrees with the environment it was tested
+# in is worse than none: it passes every local check and fails only on deploy.
+
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 sqlalchemy==2.0.36
-pydantic==2.10.4
+pydantic==2.13.4
 pydantic-settings==2.7.0
 psycopg2-binary==2.9.10
 firebase-admin==6.6.0
 python-multipart==0.0.20
 google-genai==2.12.1
-pytest==8.3.4
-alembic==1.14.0
+alembic==1.18.5
+pytest==9.1.1
