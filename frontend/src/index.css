@@ -195,3 +195,67 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
     overflow: visible;
   }
 }
+
+/* Digital Twin graph
+   ------------------
+   Motion lives here rather than in React state. The browser runs these on the
+   compositor, so a four-second reply costs no re-renders at all -- driving the
+   same movement from JavaScript would mean sixty state updates a second and a
+   full reconciliation each time.
+
+   Every animation below is gated on a class the components only apply while
+   real work is in flight. Nothing loops permanently. */
+
+@keyframes twin-flow-out {
+  from { offset-distance: 0%; opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  to   { offset-distance: 100%; opacity: 0; }
+}
+
+@keyframes twin-flow-in {
+  from { offset-distance: 100%; opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  to   { offset-distance: 0%; opacity: 0; }
+}
+
+.twin-flow-out { animation: twin-flow-out linear infinite; }
+.twin-flow-in  { animation: twin-flow-in  linear infinite; }
+
+/* The node halo and the core ripple both expand and fade, so the eye reads
+   them as the same kind of event at two scales. */
+@keyframes twin-pulse {
+  from { transform: scale(1);    opacity: .55; }
+  to   { transform: scale(1.35); opacity: 0; }
+}
+
+.twin-node-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twin-pulse 1.8s ease-out infinite;
+}
+
+.twin-core-ripple {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twin-pulse 2.4s ease-out infinite;
+}
+
+/* Focus has to be visible on an SVG node, which takes no default outline. */
+.twin-node:focus-visible circle:not(.twin-node-pulse) {
+  stroke: #e0f2fe;
+  stroke-width: 3;
+}
+
+/* Belt and braces: the components already skip animation when the user asks
+   for reduced motion, but a stylesheet-level stop means no future addition can
+   reintroduce movement by accident. */
+@media (prefers-reduced-motion: reduce) {
+  .twin-flow-out,
+  .twin-flow-in,
+  .twin-node-pulse,
+  .twin-core-ripple {
+    animation: none;
+  }
+}
