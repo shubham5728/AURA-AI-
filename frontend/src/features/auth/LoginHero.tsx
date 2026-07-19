@@ -1,20 +1,21 @@
 /**
  * The Digital Twin, as the first thing anyone sees.
  *
- * The hero was a rendered figure that appeared cropped at the ankles. The cause
- * was not layout: the source PNG is 1024x1024 and the figure's opaque pixels
- * run to row 1023 of 1024, so the feet are cut in the file. No container or
- * object-fit change can recover pixels that were never there. The figure is
- * kept, and its lower edge is masked into the platform, which turns the crop
- * into a deliberate horizon.
+ * The figure is the focal point: it fills most of the frame and the orbit sits
+ * around it rather than dwarfing it. Its cropped lower edge -- the source PNG
+ * ends at the ankles, row 1023 of 1024 -- is masked into the platform, which
+ * turns a defect into a horizon.
  *
- * What each node shows is deliberate. This is the login page: nobody is signed
- * in, so there is no status, no confidence, no last sync and no agent that
- * could be "thinking". Any of those would be theatre performed for a stranger.
- * What is true and worth showing is what each specialist is for and what it is
- * permitted to read -- which is also the more useful thing for someone deciding
- * whether to trust the product. The live version, driven by a real trace, is on
- * the Multi-Agent page after sign-in.
+ * Motion here is ambient, not informational. The body breathes, a scan line
+ * travels, motes drift, the orbit turns. None of it claims that anything is
+ * being measured, because on a login page nobody is signed in and nothing is.
+ *
+ * That is also why the nodes carry no status, confidence or "last sync". None
+ * of those exist for anyone yet, so displaying them would be a performance for
+ * a stranger. What is true is what each specialist is for and what it may read,
+ * which is the more useful thing for someone deciding whether to hand over
+ * their medical records. The live version, driven by a real trace, is the
+ * Multi-Agent page after sign-in.
  */
 
 import { useEffect, useState } from 'react';
@@ -39,6 +40,15 @@ const ICONS: Record<string, ComponentType<{ size?: number }>> = {
   prediction: TrendingUp,
 };
 
+/** A distinct accent per specialist, so selection is felt as well as read. */
+const ACCENT: Record<string, string> = {
+  doctor: '#7dd3fc',
+  nutrition: '#4ade80',
+  fitness: '#fbbf24',
+  medication: '#f472b6',
+  prediction: '#a78bfa',
+};
+
 const READS: Record<string, string> = {
   profile: 'profile',
   conditions: 'conditions',
@@ -56,11 +66,9 @@ const READS: Record<string, string> = {
 };
 
 /**
- * Shown immediately, and kept if the roster cannot be fetched.
- *
- * The backend sleeps on its free tier and takes close to a minute to wake. A
- * first screen must not sit empty waiting for a list, and these are the real
- * five with their real remits rather than placeholder text.
+ * Rendered immediately and kept if the roster cannot be fetched. The backend
+ * sleeps on its free tier and takes close to a minute to wake; a first screen
+ * must not wait on it. These are the real five with their real remits.
  */
 const FALLBACK: Role[] = [
   { key: 'doctor', label: 'General Health', description: 'Symptoms, history and lab report interpretation' },
@@ -70,15 +78,16 @@ const FALLBACK: Role[] = [
   { key: 'prediction', label: 'Health Trends', description: 'Trajectories, risks and what-if projections' },
 ];
 
-const SIZE = 460;
+const SIZE = 520;
 const C = SIZE / 2;
-const ORBIT = 186;
-const NODE = 34;
+const ORBIT = 206;
+const NODE = 36;
+const FIGURE_W = 250;
+const FIGURE_H = 404;
 
-/** Fixed scatter rather than random, so the background never reflows on render. */
 const MOTES = [
-  [46, 88], [402, 62], [78, 372], [418, 330], [232, 34],
-  [26, 226], [434, 214], [160, 430], [318, 428],
+  [58, 104], [452, 78], [92, 420], [470, 386], [268, 40],
+  [30, 262], [492, 246], [186, 486], [356, 482], [418, 152],
 ];
 
 export default function LoginHero() {
@@ -89,8 +98,8 @@ export default function LoginHero() {
     let cancelled = false;
     get<Role[]>('/api/chat/roles')
       .then((live) => { if (!cancelled && live.length) setRoles(live); })
-      // Keeping the fallback is the right outcome. A login page should not show
-      // an error because a specialist list could not be fetched.
+      // A login page should not surface an error because a specialist list
+      // failed to load. The fallback is accurate, so keeping it is correct.
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
@@ -101,96 +110,123 @@ export default function LoginHero() {
   };
 
   const selected = roles.find((r) => r.key === active) ?? null;
+  const accent = selected ? ACCENT[selected.key] ?? '#7dd3fc' : '#7dd3fc';
 
   return (
     <div className="login-hero">
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} width="100%" role="img"
         aria-label={`AURA's Digital Twin, connected to ${roles.length} specialists`}
-        style={{ display: 'block', maxHeight: 470, overflow: 'visible' }}>
+        className="login-hero-svg">
         <defs>
           <radialGradient id="heroGlow">
-            <stop offset="0%" stopColor="#7dd3fc" stopOpacity="0.34" />
+            <stop offset="0%" stopColor={accent} stopOpacity="0.30" />
             <stop offset="55%" stopColor="#1d4ed8" stopOpacity="0.12" />
             <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0" />
           </radialGradient>
           <radialGradient id="heroBody">
-            <stop offset="0%" stopColor="#bcf4ff" stopOpacity="0.55" />
-            <stop offset="60%" stopColor="#32a2de" stopOpacity="0.16" />
-            <stop offset="100%" stopColor="#32a2de" stopOpacity="0" />
+            <stop offset="0%" stopColor={accent} stopOpacity="0.5" />
+            <stop offset="58%" stopColor={accent} stopOpacity="0.14" />
+            <stop offset="100%" stopColor={accent} stopOpacity="0" />
           </radialGradient>
           <linearGradient id="heroFade" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#fff" stopOpacity="1" />
-            <stop offset="64%" stopColor="#fff" stopOpacity="1" />
+            <stop offset="66%" stopColor="#fff" stopOpacity="1" />
             <stop offset="100%" stopColor="#fff" stopOpacity="0" />
           </linearGradient>
           <mask id="heroMask">
             <rect width={SIZE} height={SIZE} fill="url(#heroFade)" />
           </mask>
-          <pattern id="heroGrid" width="34" height="34" patternUnits="userSpaceOnUse">
-            <path d="M34 0H0V34" fill="none" stroke="#7dd3fc" strokeOpacity="0.055" strokeWidth="1" />
+          <linearGradient id="heroScan" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={accent} stopOpacity="0" />
+            <stop offset="50%" stopColor={accent} stopOpacity="0.85" />
+            <stop offset="100%" stopColor={accent} stopOpacity="0" />
+          </linearGradient>
+          <pattern id="heroGrid" width="38" height="38" patternUnits="userSpaceOnUse">
+            <path d="M38 0H0V38" fill="none" stroke="#7dd3fc" strokeOpacity="0.05" strokeWidth="1" />
           </pattern>
         </defs>
 
         <rect width={SIZE} height={SIZE} fill="url(#heroGrid)" />
-        <circle cx={C} cy={C} r={ORBIT + NODE} fill="url(#heroGlow)" />
+        <circle cx={C} cy={C} r={ORBIT + NODE} fill="url(#heroGlow)"
+          style={{ transition: 'all .6s ease' }} />
 
         {MOTES.map(([x, y], i) => (
-          <circle key={i} cx={x} cy={y} r={1.6} fill="#7dd3fc" opacity={0.5}
-            className="hero-mote" style={{ animationDelay: `${i * 0.7}s` }} />
+          <circle key={i} cx={x} cy={y} r={1.7} fill="#7dd3fc"
+            className="hero-mote" style={{ animationDelay: `${i * 0.6}s` }} />
         ))}
 
         <circle cx={C} cy={C} r={ORBIT} fill="none" stroke="#38bdf8"
-          strokeOpacity={0.16} strokeWidth={1} strokeDasharray="3 10" />
+          strokeOpacity={0.14} strokeWidth={1} strokeDasharray="3 11" />
 
-        {/* Spokes sit under the figure and the nodes. Only the selected one is
-            drawn brightly, which is what makes selection legible at a glance. */}
+        {/* Spokes run under the figure. Only the selected one is drawn brightly
+            and carries a travelling point -- an affordance for "this is the one
+            you picked", not a claim that data is moving. */}
         {roles.map((role, i) => {
           const { x, y, angle } = position(i);
           const on = active === role.key;
+          const from = { x: C + 92 * Math.cos(angle), y: C + 92 * Math.sin(angle) };
+          const to = { x: x - NODE * Math.cos(angle), y: y - NODE * Math.sin(angle) };
           return (
-            <line key={`spoke-${role.key}`}
-              x1={C + 74 * Math.cos(angle)} y1={C + 74 * Math.sin(angle)}
-              x2={x - NODE * Math.cos(angle)} y2={y - NODE * Math.sin(angle)}
-              stroke="#38bdf8" strokeOpacity={on ? 0.75 : 0.14}
-              strokeWidth={on ? 2 : 1} strokeDasharray={on ? undefined : '4 8'}
-              style={{ transition: 'stroke-opacity .3s ease, stroke-width .3s ease' }} />
+            <g key={`spoke-${role.key}`}>
+              <line x1={from.x} y1={from.y} x2={to.x} y2={to.y}
+                stroke={on ? ACCENT[role.key] ?? '#38bdf8' : '#38bdf8'}
+                strokeOpacity={on ? 0.8 : 0.12}
+                strokeWidth={on ? 2 : 1}
+                strokeDasharray={on ? undefined : '4 9'}
+                style={{ transition: 'stroke-opacity .3s ease, stroke-width .3s ease' }} />
+              {on && (
+                <circle r={3.2} fill={ACCENT[role.key] ?? '#38bdf8'} className="hero-packet"
+                  style={{ offsetPath: `path("M ${from.x} ${from.y} L ${to.x} ${to.y}")` }} />
+              )}
+            </g>
           );
         })}
 
-        <ellipse cx={C} cy={C + 6} rx={104} ry={132} fill="url(#heroBody)" className="hero-breathe" />
+        <ellipse cx={C} cy={C + 4} rx={126} ry={162} fill="url(#heroBody)"
+          className="hero-breathe" style={{ transition: 'all .6s ease' }} />
 
         <image href="/images/aura-real-digital-twin.png"
-          x={C - 132} y={C - 196} width={264} height={392}
+          x={C - FIGURE_W / 2} y={C - FIGURE_H / 2 + 14}
+          width={FIGURE_W} height={FIGURE_H}
           preserveAspectRatio="xMidYMax meet"
           mask="url(#heroMask)" />
 
-        <ellipse cx={C} cy={C + 176} rx={118} ry={20} fill="rgba(58,207,242,0.20)" />
-        <ellipse cx={C} cy={C + 176} rx={118} ry={20} fill="none"
-          stroke="#5be2ff" strokeOpacity={0.55} strokeWidth={1.2} />
-        <ellipse cx={C} cy={C + 176} rx={74} ry={12} fill="none"
-          stroke="#5be2ff" strokeOpacity={0.3} />
+        <rect x={C - 96} width={192} height={2} fill="url(#heroScan)"
+          className="hero-scan" rx={1} />
 
-        {/* Rotates as one group so the browser animates a single transform
-            rather than one per node. */}
+        <ellipse cx={C} cy={C + 194} rx={136} ry={23} fill={`${accent}22`}
+          style={{ transition: 'fill .6s ease' }} />
+        <ellipse cx={C} cy={C + 194} rx={136} ry={23} fill="none"
+          stroke={accent} strokeOpacity={0.55} strokeWidth={1.3}
+          style={{ transition: 'stroke .6s ease' }} />
+        <ellipse cx={C} cy={C + 194} rx={86} ry={14} fill="none"
+          stroke={accent} strokeOpacity={0.28} />
+
         <g className="login-hero-orbit" style={{ transformOrigin: `${C}px ${C}px` }}>
           {roles.map((role, i) => {
             const { x, y } = position(i);
             const Icon = ICONS[role.key] ?? Sparkles;
             const on = active === role.key;
+            const colour = ACCENT[role.key] ?? '#7dd3fc';
             return (
               <g key={role.key}
                 onMouseEnter={() => setActive(role.key)}
                 onMouseLeave={() => setActive(null)}
                 style={{ cursor: 'pointer' }}>
+                {on && (
+                  <circle cx={x} cy={y} r={NODE} fill="none" stroke={colour}
+                    strokeWidth={2} className="hero-node-pulse" />
+                )}
                 <circle cx={x} cy={y} r={NODE} fill="#0b2545"
-                  stroke="#38bdf8" strokeOpacity={on ? 0.95 : 0.45}
-                  strokeWidth={on ? 2.2 : 1.2}
-                  style={{ transition: 'stroke-opacity .3s ease, stroke-width .3s ease' }} />
-                {/* Counter-rotates so icons stay upright as the orbit turns. */}
+                  stroke={on ? colour : '#38bdf8'}
+                  strokeOpacity={on ? 1 : 0.42}
+                  strokeWidth={on ? 2.4 : 1.2}
+                  style={{ transition: 'stroke .3s ease, stroke-opacity .3s ease, stroke-width .3s ease' }} />
+                {/* Counter-rotated so icons stay upright as their circles travel. */}
                 <g className="login-hero-counter"
-                  style={{ transformOrigin: `${x}px ${y}px`, color: on ? '#bcf4ff' : '#7dd3fc' }}>
-                  <g transform={`translate(${x - 9}, ${y - 9})`}>
-                    <Icon size={18} />
+                  style={{ transformOrigin: `${x}px ${y}px`, color: on ? colour : '#7dd3fc' }}>
+                  <g transform={`translate(${x - 10}, ${y - 10})`}>
+                    <Icon size={20} />
                   </g>
                 </g>
               </g>
@@ -199,12 +235,15 @@ export default function LoginHero() {
         </g>
       </svg>
 
-      {/* Selecting from here rather than only on the moving nodes: a rotating
-          hit target is a poor one, and these are keyboard reachable. */}
+      {/* Selection also lives here: a rotating node is a poor hit target, and
+          these are reachable by keyboard. */}
       <div className="login-hero-legend">
         {roles.map((role) => (
           <button key={role.key} type="button"
             className={active === role.key ? 'hero-pill on' : 'hero-pill'}
+            style={active === role.key
+              ? { borderColor: ACCENT[role.key], color: '#e8f7ff', background: `${ACCENT[role.key]}22` }
+              : undefined}
             onMouseEnter={() => setActive(role.key)}
             onMouseLeave={() => setActive(null)}
             onFocus={() => setActive(role.key)}
@@ -214,12 +253,10 @@ export default function LoginHero() {
         ))}
       </div>
 
-      {/* What the specialist is for, and what it may read. Not what it is doing
-          -- on a login page, nothing is. */}
       <div className="login-hero-detail" aria-live="polite">
         {selected ? (
           <>
-            <b>{selected.label}</b>
+            <b style={{ color: accent }}>{selected.label}</b>
             <span>{selected.description}</span>
             {selected.reads?.length ? (
               <small>Reads {selected.reads.map((k) => READS[k] ?? k).join(' · ')}</small>

@@ -298,23 +298,23 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 }
 
 
+
 /* Login hero
    ----------
-   Motion is deliberately slow. Someone spends about ten seconds on this page,
-   so the orbit reads as alive without ever competing with the sign-in form
-   beside it -- a full revolution takes two minutes. */
+   All motion here is ambient. Nothing on this page is measuring anything --
+   nobody is signed in -- so the movement says "this is a living system", never
+   "this reading just arrived". */
 @keyframes login-orbit { to { transform: rotate(360deg); } }
 @keyframes login-orbit-counter { to { transform: rotate(-360deg); } }
 
+/* Two minutes per revolution: alive on a page someone looks at for ten
+   seconds, never competing with the sign-in form beside it. */
 .login-hero-orbit { animation: login-orbit 120s linear infinite; }
-
-/* Icons counter-rotate at the same rate so they stay upright while their
-   circles travel. */
 .login-hero-counter { animation: login-orbit-counter 120s linear infinite; }
 
 @keyframes hero-breathe {
-  0%, 100% { opacity: .55; transform: scale(1); }
-  50%      { opacity: .8;  transform: scale(1.045); }
+  0%, 100% { opacity: .5;  transform: scale(1); }
+  50%      { opacity: .82; transform: scale(1.05); }
 }
 
 .hero-breathe {
@@ -323,12 +323,43 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   animation: hero-breathe 5.5s ease-in-out infinite;
 }
 
-@keyframes hero-mote {
-  0%, 100% { opacity: .18; }
-  50%      { opacity: .65; }
+/* Travels the body once every seven seconds, resting between passes so it
+   reads as a sweep rather than a strobe. */
+@keyframes hero-scan {
+  0%       { transform: translateY(72px);  opacity: 0; }
+  12%      { opacity: .9; }
+  60%      { opacity: .9; }
+  72%, 100% { transform: translateY(420px); opacity: 0; }
 }
 
-.hero-mote { animation: hero-mote 6s ease-in-out infinite; }
+.hero-scan { animation: hero-scan 7s ease-in-out infinite; }
+
+@keyframes hero-mote {
+  0%, 100% { opacity: .14; transform: translateY(0); }
+  50%      { opacity: .6;  transform: translateY(-6px); }
+}
+
+.hero-mote { animation: hero-mote 7s ease-in-out infinite; }
+
+@keyframes hero-packet {
+  from { offset-distance: 0%;   opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 1; }
+  to   { offset-distance: 100%; opacity: 0; }
+}
+
+.hero-packet { animation: hero-packet 1.6s linear infinite; }
+
+@keyframes hero-node-pulse {
+  from { transform: scale(1);    opacity: .6; }
+  to   { transform: scale(1.32); opacity: 0; }
+}
+
+.hero-node-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-node-pulse 1.9s ease-out infinite;
+}
 
 .login-hero-legend {
   display: flex;
@@ -339,48 +370,120 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 }
 
 .hero-pill {
-  border: 1px solid rgba(125, 211, 252, 0.28);
-  background: rgba(11, 37, 69, 0.55);
-  color: #7dd3fc;
+  border: 1px solid rgba(125, 211, 252, 0.22);
+  background: rgba(11, 37, 69, 0.5);
+  color: rgba(125, 211, 252, 0.75);
   border-radius: 999px;
-  padding: 5px 13px;
+  padding: 6px 14px;
   font-size: var(--text-caption);
   font-weight: var(--w-semibold);
   cursor: pointer;
-  transition: background .2s ease, border-color .2s ease, color .2s ease;
+  transition: background .25s ease, border-color .25s ease, color .25s ease, transform .25s ease;
 }
 
 .hero-pill:hover,
-.hero-pill:focus-visible,
-.hero-pill.on {
-  background: rgba(56, 189, 248, 0.16);
-  border-color: rgba(125, 211, 252, 0.75);
-  color: #e0f2fe;
-}
+.hero-pill:focus-visible { transform: translateY(-1px); }
+.hero-pill.on { transform: translateY(-1px); }
 
-/* Fixed height so hovering between specialists does not shift the page. */
+/* Fixed height so moving between specialists never shifts the page. */
 .login-hero-detail {
-  min-height: 76px;
+  min-height: 82px;
   margin-top: var(--space-3);
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   color: #cfe9ff;
 }
 
-.login-hero-detail b { font-size: var(--text-card); color: #e0f2fe; }
+.login-hero-detail b { font-size: var(--text-card); transition: color .4s ease; }
 .login-hero-detail span { font-size: var(--text-small); opacity: .85; }
-.login-hero-detail small { font-size: var(--text-caption); color: #7dd3fc; opacity: .9; }
-.login-hero-detail .hero-hint { opacity: .6; }
+.login-hero-detail small { font-size: var(--text-caption); color: #7dd3fc; opacity: .85; }
+.login-hero-detail .hero-hint { opacity: .55; }
 
 /* The old fixed-height frame clipped the illustration. The hero carries its own
-   viewBox now, so it scales rather than being cropped. */
+   viewBox now, so it scales instead. */
 .auth-twin { height: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   .login-hero-orbit,
   .login-hero-counter,
   .hero-breathe,
-  .hero-mote { animation: none; }
+  .hero-scan,
+  .hero-mote,
+  .hero-packet,
+  .hero-node-pulse { animation: none; }
 }
+
+/* Auth layout
+   -----------
+   The sign-in page has to fit one screen. It stopped fitting when the hero
+   grew: a fixed 500px illustration plus a 90px heading offset plus 55px
+   padding overflowed the viewport, and a login page that scrolls to reach its
+   own button is a failure of layout, not of the illustration.
+
+   Everything on this side is now flexible, and the hero absorbs whatever space
+   is left rather than dictating it. */
+@media (min-width: 981px) {
+  .auth-page {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .auth-brand {
+    display: flex;
+    flex-direction: column;
+    padding: clamp(20px, 3vh, 44px) max(32px, 5vw);
+    min-height: 0;
+  }
+
+  /* Was a flat 90px, which is most of a short laptop screen. */
+  .auth-brand h1 {
+    margin-top: clamp(8px, 3vh, 48px);
+    margin-bottom: clamp(6px, 1.5vh, 16px);
+    font-size: clamp(30px, 3.6vw, 54px);
+  }
+
+  .auth-brand p { margin: 0; }
+
+  /* Takes the remaining height. min-height:0 is required: a flex child
+     defaults to min-height:auto and refuses to shrink below its content, so
+     without it the hero would still push the page over. */
+  .auth-twin {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-top: clamp(4px, 1.5vh, 18px);
+  }
+
+  .login-hero {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .login-hero-svg {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: block;
+    overflow: visible;
+  }
+
+  /* Fixed so the flexible illustration cannot squeeze the labels. */
+  .login-hero-legend { flex: 0 0 auto; margin-top: clamp(4px, 1.2vh, 14px); }
+  .login-hero-detail { flex: 0 0 auto; min-height: 64px; margin-top: 6px; }
+
+  /* On a short screen the card, not the page, is what scrolls. */
+  .auth-panel {
+    min-height: 0;
+    overflow-y: auto;
+    padding: clamp(20px, 3vh, 40px);
+  }
+}
+
+/* Below the breakpoint the layout stacks and scrolling is expected. */
+.login-hero-svg { display: block; overflow: visible; max-height: 460px; }
