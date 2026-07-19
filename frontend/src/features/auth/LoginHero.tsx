@@ -82,8 +82,8 @@ const SIZE = 520;
 const C = SIZE / 2;
 const ORBIT = 206;
 const NODE = 36;
-const FIGURE_W = 250;
-const FIGURE_H = 404;
+const FIGURE_W = 286;
+const FIGURE_H = 462;
 
 const MOTES = [
   [58, 104], [452, 78], [92, 420], [470, 386], [268, 40],
@@ -158,7 +158,33 @@ export default function LoginHero() {
         <circle cx={C} cy={C} r={ORBIT} fill="none" stroke="#38bdf8"
           strokeOpacity={0.14} strokeWidth={1} strokeDasharray="3 11" />
 
-        {/* Spokes run under the figure. Only the selected one is drawn brightly
+        <ellipse cx={C} cy={C + 4} rx={126} ry={162} fill="url(#heroBody)"
+          className="hero-breathe" style={{ transition: 'all .6s ease' }} />
+
+        <image href="/images/aura-real-digital-twin.png"
+          x={C - FIGURE_W / 2} y={C - FIGURE_H / 2 + 22}
+          width={FIGURE_W} height={FIGURE_H}
+          preserveAspectRatio="xMidYMax meet"
+          mask="url(#heroMask)" />
+
+        <rect x={C - 96} width={192} height={2} fill="url(#heroScan)"
+          className="hero-scan" rx={1} />
+
+        {/* Four thin rings rather than one heavy ellipse. A solid glowing
+            disc read as a prop the figure was standing on; concentric rings
+            that pulse outward read as a scanning platform. */}
+        {[0, 1, 2, 3].map((ring) => (
+          <ellipse key={ring} cx={C} cy={C + 196}
+            rx={54 + ring * 32} ry={9 + ring * 5}
+            fill="none" stroke={accent}
+            strokeOpacity={0.42 - ring * 0.08}
+            strokeWidth={ring === 0 ? 1.4 : 1}
+            className="hero-ring"
+            style={{ animationDelay: `${ring * 0.5}s`, transition: 'stroke .6s ease' }} />
+        ))}
+
+        <g className="login-hero-orbit" style={{ transformOrigin: `${C}px ${C}px` }}>
+          {/* Spokes run under the figure. Only the selected one is drawn brightly
             and carries a travelling point -- an affordance for "this is the one
             you picked", not a claim that data is moving. */}
         {roles.map((role, i) => {
@@ -182,27 +208,6 @@ export default function LoginHero() {
           );
         })}
 
-        <ellipse cx={C} cy={C + 4} rx={126} ry={162} fill="url(#heroBody)"
-          className="hero-breathe" style={{ transition: 'all .6s ease' }} />
-
-        <image href="/images/aura-real-digital-twin.png"
-          x={C - FIGURE_W / 2} y={C - FIGURE_H / 2 + 14}
-          width={FIGURE_W} height={FIGURE_H}
-          preserveAspectRatio="xMidYMax meet"
-          mask="url(#heroMask)" />
-
-        <rect x={C - 96} width={192} height={2} fill="url(#heroScan)"
-          className="hero-scan" rx={1} />
-
-        <ellipse cx={C} cy={C + 194} rx={136} ry={23} fill={`${accent}22`}
-          style={{ transition: 'fill .6s ease' }} />
-        <ellipse cx={C} cy={C + 194} rx={136} ry={23} fill="none"
-          stroke={accent} strokeOpacity={0.55} strokeWidth={1.3}
-          style={{ transition: 'stroke .6s ease' }} />
-        <ellipse cx={C} cy={C + 194} rx={86} ry={14} fill="none"
-          stroke={accent} strokeOpacity={0.28} />
-
-        <g className="login-hero-orbit" style={{ transformOrigin: `${C}px ${C}px` }}>
           {roles.map((role, i) => {
             const { x, y } = position(i);
             const Icon = ICONS[role.key] ?? Sparkles;

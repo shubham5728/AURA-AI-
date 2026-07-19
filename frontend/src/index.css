@@ -326,10 +326,10 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 /* Travels the body once every seven seconds, resting between passes so it
    reads as a sweep rather than a strobe. */
 @keyframes hero-scan {
-  0%       { transform: translateY(72px);  opacity: 0; }
+  0%       { transform: translateY(58px);  opacity: 0; }
   12%      { opacity: .9; }
   60%      { opacity: .9; }
-  72%, 100% { transform: translateY(420px); opacity: 0; }
+  72%, 100% { transform: translateY(468px); opacity: 0; }
 }
 
 .hero-scan { animation: hero-scan 7s ease-in-out infinite; }
@@ -372,7 +372,7 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 .hero-pill {
   border: 1px solid rgba(125, 211, 252, 0.22);
   background: rgba(11, 37, 69, 0.5);
-  color: rgba(125, 211, 252, 0.75);
+  color: #a5d8f5;
   border-radius: 999px;
   padding: 6px 14px;
   font-size: var(--text-caption);
@@ -397,9 +397,9 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 }
 
 .login-hero-detail b { font-size: var(--text-card); transition: color .4s ease; }
-.login-hero-detail span { font-size: var(--text-small); opacity: .85; }
-.login-hero-detail small { font-size: var(--text-caption); color: #7dd3fc; opacity: .85; }
-.login-hero-detail .hero-hint { opacity: .55; }
+.login-hero-detail span { font-size: var(--text-small); color: #dceeff; }
+.login-hero-detail small { font-size: var(--text-caption); color: #9ad7f7; }
+.login-hero-detail .hero-hint { color: #9fbdd8; }
 
 /* The old fixed-height frame clipped the illustration. The hero carries its own
    viewBox now, so it scales instead. */
@@ -487,3 +487,30 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 
 /* Below the breakpoint the layout stacks and scrolling is expected. */
 .login-hero-svg { display: block; overflow: visible; max-height: 460px; }
+
+/* Scanning platform
+   -----------------
+   Four thin rings expanding outward, staggered. A single heavy ellipse read as
+   a solid prop the figure was standing on; rings that travel read as a surface
+   being scanned. */
+@keyframes hero-ring {
+  0%   { transform: scale(.82); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+.hero-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hero-ring 5s ease-out infinite;
+}
+
+/* Nodes lift slightly on hover. Applied to the group so the circle, its icon
+   and its pulse move together. */
+.login-hero-orbit > g { transition: transform .25s ease; }
+.login-hero-orbit > g:hover { transform: translateY(-2px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ring { animation: none; opacity: .4; }
+  .login-hero-orbit > g:hover { transform: none; }
+}
