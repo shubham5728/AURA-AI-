@@ -16,7 +16,7 @@ import ProfilePage from './pages/Profile';
 import LogDayPage from './pages/LogDay';
 import MedicationsPage from './pages/Medications';
 import TrendsPage from './pages/Trends';
-import ReportsPage from './pages/Reports';
+import ReportsPage from './features/reports/ReportsPage';
 import OverviewPage from './features/overview/OverviewPage';
 import FamilyPage from './pages/Family';
 import HereditaryPage from './pages/Hereditary';

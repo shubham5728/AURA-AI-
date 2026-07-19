@@ -1,27 +1,20 @@
 /**
- * Medical Report Analyzer.
+ * One analysed report.
  *
- * Replaces the version inside the single-file component, which rendered every
- * extracted value as an identical chip. Sixteen identical chips reproduce the
- * problem the feature is meant to solve -- the paper report is already a flat
- * wall of numbers.
- *
- * Here the summary leads with what needs attention, results are grouped into
- * the panels a lab prints, and each value is shown against its own reference
- * range.
+ * Moved out of the page unchanged in behaviour: results grouped into the panels
+ * a lab prints, each value drawn on its own reference range, findings named
+ * before the detail, and the card expanded automatically when something is out
+ * of range.
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, ClipboardPlus, Upload } from 'lucide-react';
-import BiomarkerRow from '../components/BiomarkerRow';
-import { get, upload } from '../lib/api';
-import { PANEL_PURPOSE } from '../lib/explanations';
-import { groupIntoPanels } from '../lib/panels';
-import type { Report } from '../lib/types';
+import { useState } from 'react';
+import { AlertTriangle, Check, ChevronDown, ClipboardPlus } from 'lucide-react';
+import BiomarkerRow from '../../../components/BiomarkerRow';
+import { PANEL_PURPOSE } from '../../../lib/explanations';
+import { groupIntoPanels } from '../../../lib/panels';
+import type { Report } from '../../../lib/types';
 
-const MAX_MB = 10;
-
-function ReportCard({ report }: { report: Report }) {
+export default function ReportCard({ report }: { report: Report }) {
   const markers = report.biomarkers || [];
   const abnormal = markers.filter((m) => m.flag === 'low' || m.flag === 'high');
   // Expanded by default when something is out of range: the findings that
@@ -157,97 +150,5 @@ function ReportCard({ report }: { report: Report }) {
         </div>
       )}
     </article>
-  );
-}
-
-export default function ReportsPage() {
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [drag, setDrag] = useState(false);
-  const [error, setError] = useState('');
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const load = async () => {
-    try {
-      const list = await get<Report[]>('/api/reports');
-      // The list endpoint omits biomarkers; the cards need them.
-      const detailed = await Promise.all(
-        list.map((r) => get<Report>(`/api/reports/${r.id}`).catch(() => r)),
-      );
-      setReports(detailed);
-      setError('');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not load your reports');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
-
-  const send = async (file: File) => {
-    if (file.size > MAX_MB * 1e6) {
-      setError(`File must be smaller than ${MAX_MB} MB.`);
-      return;
-    }
-    setBusy(true);
-    setError('');
-    try {
-      await upload('/api/reports', file);
-      await load();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <main className="page" style={{ maxWidth: 1020 }}>
-      <header className="page-head">
-        <div>
-          <h1>Medical Report Analyzer</h1>
-          <p>Upload a lab report and AURA reads the values against their reference ranges.</p>
-        </div>
-      </header>
-
-      <label
-        className={drag ? 'upload-zone drag' : 'upload-zone'}
-        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
-        onDragLeave={() => setDrag(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDrag(false);
-          const file = e.dataTransfer.files[0];
-          if (file) send(file);
-        }}
-      >
-        <input ref={inputRef} type="file" accept=".pdf,image/*"
-          onChange={(e) => e.target.files?.[0] && send(e.target.files[0])} />
-        <div className="upload-icon"><Upload /></div>
-        <h3>{busy ? 'Reading your report…' : 'Drop a health report here'}</h3>
-        <p>PDF, PNG or JPG · Read by AI · Maximum {MAX_MB} MB</p>
-        <span className="btn primary">Choose a file</span>
-        {busy && <div className="upload-progress"><span /></div>}
-      </label>
-
-      {error && <div className="error" style={{ marginTop: '1rem' }}>{error}</div>}
-
-      <section style={{ marginTop: '2rem' }}>
-        <span className="card-label">ANALYSIS HISTORY</span>
-        {loading ? (
-          <p style={{ opacity: 0.7 }}>Loading…</p>
-        ) : reports.length === 0 ? (
-          <p style={{ opacity: 0.7 }}>
-            No reports yet. Upload one and its values will appear here and in your trends.
-          </p>
-        ) : (
-          reports.map((r) => <ReportCard key={r.id} report={r} />)
-        )}
-      </section>
-    </main>
   );
 }

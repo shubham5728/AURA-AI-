@@ -119,7 +119,11 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
 }
 
 /* The control on its own line, under its label. */
-.page label > input,
+/* File inputs are excluded. This rule is more specific than the drop zone's
+   own `display:none`, so without the exclusion it un-hid the raw browser
+   control and the Report Analyzer showed "Choose File | No file chosen" above
+   its own custom upload area. */
+.page label > input:not([type='file']),
 .page label > select,
 .page label > textarea {
   display: block;
@@ -258,4 +262,37 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   .twin-core-ripple {
     animation: none;
   }
+}
+
+/* Spinner used by the upload zone and analysis pipeline. */
+@keyframes twin-spin { to { transform: rotate(360deg); } }
+.twin-spin { animation: twin-spin 1s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .twin-spin { animation: none; }
+}
+
+/* Upload zone. The real <input type="file"> stays in the DOM for keyboard and
+   screen-reader behaviour; only its default rendering is hidden. */
+.upload-zone {
+  border: 2px dashed var(--line);
+  background: var(--surface2);
+}
+
+.upload-zone:hover,
+.upload-zone:focus-within {
+  border-color: var(--blue);
+  background: rgba(56, 132, 232, 0.04);
+}
+
+.upload-zone.drag {
+  border-color: var(--blue);
+  border-style: solid;
+  background: rgba(56, 132, 232, 0.08);
+}
+
+/* Focus has to be visible even though the control itself is not. */
+.upload-zone:focus-within {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
