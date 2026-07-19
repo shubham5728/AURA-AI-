@@ -1,0 +1,21 @@
+# Keeps the build context small and stops local state reaching the image.
+#
+# The virtualenv alone is ~250 MB and would be copied in only to be ignored --
+# the image installs its own dependencies. The database and uploads are local
+# development data and must never ship inside a container.
+
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+.env
+*-service-account.json
+firebase-credentials.json
+
+*.db
+*.sqlite3
+uploads/
+
+.pytest_cache/
+tests/

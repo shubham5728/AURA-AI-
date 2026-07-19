@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import List, Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,6 +13,24 @@ class Settings(BaseSettings):
     # SQLite by default so the backend runs with zero setup. Postgres is the
     # real target -- point DATABASE_URL at the docker-compose instance to use it.
     database_url: str = "sqlite:///./aura_dev.db"
+
+    @field_validator("database_url")
+    @classmethod
+    def normalise_postgres_scheme(cls, url: str) -> str:
+        """Rewrite the legacy `postgres://` scheme to `postgresql://`.
+
+        Render, Heroku and Railway all hand out connection strings beginning
+        `postgres://`. SQLAlchemy dropped that alias in 1.4, so it fails at
+        engine creation with "Can't load plugin: sqlalchemy.dialects:postgres"
+        -- a message that points at SQLAlchemy internals rather than at the one
+        character that is wrong.
+
+        Fixed here rather than in the deploy config so it holds for every host
+        that does this, not just the one that did it first.
+        """
+        if url.startswith("postgres://"):
+            return "postgresql://" + url[len("postgres://") :]
+        return url
 
     # Path to the Firebase service account JSON. When unset, token verification
     # is unavailable and only dev auth works.
