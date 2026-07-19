@@ -71,7 +71,8 @@ export default function OverviewPage() {
           display: 'grid', gap: 'var(--space-5)',
           gridTemplateColumns: 'repeat(auto-fit,minmax(340px,1fr))',
         }}>
-          <HealthScoreCard score={data.score} summary={data.summary} coverage={data.coverage} />
+          <HealthScoreCard score={data.score} summary={data.summary}
+            coverage={data.coverage} trend={data.trend} />
           <AIBriefing briefing={data.briefing} />
         </div>
 

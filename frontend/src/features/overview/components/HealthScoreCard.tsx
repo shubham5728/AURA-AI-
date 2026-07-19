@@ -15,17 +15,20 @@ import { ArrowRight } from 'lucide-react';
 import Chip from '../../../components/ui/Chip';
 import { STATUS_COLOUR } from '../../../components/ui/tokens';
 import { unassessed } from '../useOverview';
+import ScoreTrendLine from './ScoreTrendLine';
+import type { ScoreTrend } from '../types';
 
 interface Props {
   score: number | null;
   summary: string;
   coverage: Record<string, boolean>;
+  trend: ScoreTrend;
 }
 
 const RADIUS = 54;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export default function HealthScoreCard({ score, summary, coverage }: Props) {
+export default function HealthScoreCard({ score, summary, coverage, trend }: Props) {
   const nav = useNavigate();
   const gaps = unassessed(coverage);
   const assessed = Object.values(coverage).filter(Boolean).length;
@@ -67,7 +70,13 @@ export default function HealthScoreCard({ score, summary, coverage }: Props) {
         <div style={{ flex: 1, minWidth: 220 }}>
           <p className="t-lead" style={{ margin: 0 }}>{summary}</p>
 
-          <div style={{ marginTop: 'var(--space-3)' }}>
+          {score !== null && (
+            <div style={{ marginTop: 'var(--space-3)' }}>
+              <ScoreTrendLine trend={trend} />
+            </div>
+          )}
+
+          <div style={{ marginTop: 'var(--space-4)' }}>
             <small style={{ opacity: 0.65 }}>
               Based on {assessed} of {total} areas
             </small>

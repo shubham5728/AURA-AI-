@@ -61,6 +61,9 @@ class User(Base):
     briefings: Mapped[List["DailyBriefing"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    score_snapshots: Mapped[List["ScoreSnapshot"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Profile(Base):
@@ -168,6 +171,42 @@ class DailyLog(Base):
     calories_out: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="daily_logs")
+
+
+class ScoreSnapshot(Base):
+    """One record of the health score per user per day.
+
+    The score has always been computed on demand and never kept, so the app
+    could show a number but never a direction -- and "your score improved this
+    week" is the sentence people actually want.
+
+    Recorded when the overview is opened rather than by a scheduled job, since
+    there is no scheduler. That has a consequence worth stating: history exists
+    only for days the app was used. A gap means nobody looked, not that
+    nothing happened, and the interface must not draw a line straight across it
+    as though the score were flat.
+
+    `assessed_areas` is stored alongside, because a score of 90 covering one
+    area and a score of 90 covering six are not comparable, and a trend drawn
+    between them would be meaningless.
+    """
+
+    __tablename__ = "score_snapshots"
+    __table_args__ = (UniqueConstraint("user_id", "date", name="uq_score_user_date"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    date: Mapped[date] = mapped_column(Date, index=True)
+
+    score: Mapped[int] = mapped_column(Integer)
+    assessed_areas: Mapped[int] = mapped_column(Integer, default=0)
+    total_areas: Mapped[int] = mapped_column(Integer, default=6)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="score_snapshots")
 
 
 class DailyBriefing(Base):

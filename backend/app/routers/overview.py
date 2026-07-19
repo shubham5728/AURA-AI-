@@ -17,6 +17,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models import DailyLog, User
 from app.services import briefing as briefing_service
+from app.services import score_history
 from app.services.scoring import calculate_score
 from app.twin import build_health_state, latest_markers
 
@@ -59,12 +60,29 @@ class SignalOut(BaseModel):
     measured_at: Optional[date]
 
 
+class TrendPointOut(BaseModel):
+    date: date
+    score: int
+    assessed_areas: int
+
+
+class TrendOut(BaseModel):
+    points: List[TrendPointOut]
+    # None when there is one reading, or when coverage changed across the
+    # window -- a difference between unequal coverage is arithmetic, not news.
+    change: Optional[int]
+    compared_with: Optional[date]
+    days_recorded: int
+    coverage_changed: bool
+
+
 class OverviewOut(BaseModel):
     score: Optional[int]
     score_status: str
     summary: str
     coverage: dict
     briefing: BriefingOut
+    trend: TrendOut
     metrics: List[MetricOut]
     concerns: List[ConcernOut]
     signals: List[SignalOut]
@@ -77,6 +95,12 @@ def overview(
 ) -> OverviewOut:
     state = build_health_state(db, user)
     result = calculate_score(state)
+
+    # Recorded on view because there is no scheduler. History therefore covers
+    # the days the app was opened, which the trend reports rather than hides.
+    score_history.record(db, user, result)
+    trend = score_history.trend(db, user)
+
     brief = briefing_service.build(db, user)
 
     cutoff = date.today() - timedelta(days=7)
@@ -120,6 +144,7 @@ def overview(
         summary=result.summary,
         coverage=result.coverage,
         briefing=BriefingOut(**brief.as_dict()),
+        trend=TrendOut(**trend.as_dict()),
         metrics=metrics,
         concerns=concerns,
         signals=signals,
