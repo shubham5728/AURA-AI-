@@ -153,6 +153,38 @@ class MedicationTakenIn(BaseModel):
     taken: bool
 
 
+class FamilyMemberIn(BaseModel):
+    name: str = Field(min_length=1, max_length=128)
+    relation: str = Field(min_length=1, max_length=64)
+    birth_year: Optional[int] = Field(default=None, ge=1900, le=date.today().year)
+    conditions: List[str] = []
+    notes: Optional[str] = None
+
+
+class FamilyMemberOut(FamilyMemberIn):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
+class HereditaryMarker(BaseModel):
+    name: str
+    label: str
+    value: float
+    unit: Optional[str]
+    flag: str
+
+
+class HereditaryFinding(BaseModel):
+    condition_key: str
+    condition: str
+    relatives: List[str]
+    closest_relation: str
+    strength: str
+    watch: str
+    your_markers: List[HereditaryMarker]
+
+
 class InteractionOut(BaseModel):
     drugs: List[str]
     severity: str

@@ -55,6 +55,9 @@ class User(Base):
     chat_messages: Mapped[List["ChatMessage"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    family_members: Mapped[List["FamilyMember"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Profile(Base):
@@ -162,6 +165,41 @@ class DailyLog(Base):
     calories_out: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     user: Mapped["User"] = relationship(back_populates="daily_logs")
+
+
+class FamilyMember(Base):
+    """A relative's health information, recorded by the user.
+
+    Deliberately not a user account. Multi-user family access needs a consent
+    model, and getting consent wrong with health data causes real harm -- so
+    this is the user's own notebook about their household, which is a smaller
+    thing that can be built correctly.
+
+    It also carries the family history that hereditary risk is derived from:
+    "father, diabetes" is the input that makes a raised HbA1c worth a closer
+    look.
+    """
+
+    __tablename__ = "family_members"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    name: Mapped[str] = mapped_column(String(128))
+    relation: Mapped[str] = mapped_column(String(64))
+
+    # Year rather than a full date: it is enough to estimate age, and asking for
+    # a relative's exact birthday collects more than the feature needs.
+    birth_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    conditions: Mapped[list] = mapped_column(JSON, default=list)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="family_members")
 
 
 class ChatMessage(Base):
