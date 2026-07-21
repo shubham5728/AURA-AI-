@@ -48,3 +48,19 @@ export function statusForPoints(points: number): HealthStatus {
   if (points >= 8) return 'attention';
   return 'unknown';
 }
+
+/**
+ * The colour for a health score, 0-100.
+ *
+ * One definition so every ring that shows a score -- today's on the overview,
+ * the projected one in the simulator -- uses the same thresholds and the same
+ * palette. They had drifted: the overview banded at 85/60 with the status
+ * greens and ambers, the simulator at 75/60 with a different red, amber and
+ * blue, so the same number wore a different colour on two screens.
+ */
+export function scoreColour(score: number | null): string {
+  if (score === null) return STATUS_COLOUR.unknown;
+  if (score >= 85) return STATUS_COLOUR.good;
+  if (score >= 60) return STATUS_COLOUR.attention;
+  return STATUS_COLOUR.urgent;
+}

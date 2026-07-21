@@ -254,7 +254,7 @@ export async function fetchResource(resource: string): Promise<Row[]> {
   if (handler) return handler();
   if (NOT_MODELLED.includes(resource)) return [];
 
-  console.warn(`Unknown resource "${resource}" requested.`);
+  if (import.meta.env.DEV) console.warn(`Unknown resource "${resource}" requested.`);
   return [];
 }
 

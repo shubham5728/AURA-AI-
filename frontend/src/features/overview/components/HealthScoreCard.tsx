@@ -13,7 +13,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import Chip from '../../../components/ui/Chip';
-import { STATUS_COLOUR } from '../../../components/ui/tokens';
+import { scoreColour } from '../../../components/ui/tokens';
 import { unassessed } from '../useOverview';
 import ScoreTrendLine from './ScoreTrendLine';
 import type { ScoreTrend } from '../types';
@@ -34,11 +34,7 @@ export default function HealthScoreCard({ score, summary, coverage, trend }: Pro
   const assessed = Object.values(coverage).filter(Boolean).length;
   const total = Object.keys(coverage).length;
 
-  const colour =
-    score === null ? STATUS_COLOUR.unknown
-      : score >= 85 ? STATUS_COLOUR.good
-        : score >= 60 ? STATUS_COLOUR.attention
-          : STATUS_COLOUR.urgent;
+  const colour = scoreColour(score);
 
   const filled = score === null ? 0 : (score / 100) * CIRCUMFERENCE;
 
