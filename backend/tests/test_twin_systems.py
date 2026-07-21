@@ -114,3 +114,88 @@ def test_systems_cover_distinct_body_regions(db_session, test_user):
     # Each tab lights a different part of the figure, so switching tabs visibly
     # moves the highlight.
     assert len(set(regions)) == len(regions)
+
+
+def test_missing_markers_are_named(db_session, test_user):
+    """The honest substitute for a confidence score: which markers this system
+    looked for and did not find."""
+    metabolic = _system(build_systems(db_session, test_user), "metabolic")
+    assert "HbA1c" in metabolic.missing
+    assert "Fasting glucose" in metabolic.missing
+
+
+def test_a_present_marker_leaves_the_missing_list(db_session, test_user):
+    report = Report(user_id=test_user.id, file_url="x", parse_status="parsed")
+    db_session.add(report)
+    db_session.commit()
+    db_session.add(Biomarker(
+        report_id=report.id, name="hba1c", value=5.2, unit="%",
+        ref_low=4.0, ref_high=5.6, flag="normal",
+    ))
+    db_session.commit()
+
+    metabolic = _system(build_systems(db_session, test_user), "metabolic")
+    assert "HbA1c" not in metabolic.missing
+
+
+def test_relationships_point_at_real_tabs(db_session, test_user):
+    """A 'relates to' link must open another system that exists, or clicking it
+    goes nowhere."""
+    systems = build_systems(db_session, test_user)
+    keys = {s.key for s in systems}
+    for system in systems:
+        for related in system.relates_to:
+            assert related.key in keys
+            assert related.key != system.key  # never links to itself
+
+
+def test_metrics_carry_a_plain_language_explanation(db_session, test_user):
+    for system in build_systems(db_session, test_user):
+        for metric in system.metrics:
+            assert metric.explanation, f"{metric.label} has no explanation"
+
+
+def test_direction_reads_movement_toward_the_range(db_session, test_user):
+    """Improving means closer to the middle of the range, not merely lower.
+
+    HbA1c falling 7.5 -> 6.4 moves toward the 4.0-5.6 band, so it improves even
+    though a naive 'went down' rule and a 'went up is worse' rule would both
+    mislabel some markers.
+    """
+    report_a = Report(user_id=test_user.id, file_url="a", parse_status="parsed",
+                      created_at=None)
+    db_session.add(report_a)
+    db_session.commit()
+    db_session.add(Biomarker(report_id=report_a.id, name="hba1c", value=7.5,
+                             unit="%", ref_low=4.0, ref_high=5.6, flag="high",
+                             measured_at=date(2026, 1, 1)))
+    report_b = Report(user_id=test_user.id, file_url="b", parse_status="parsed")
+    db_session.add(report_b)
+    db_session.commit()
+    db_session.add(Biomarker(report_id=report_b.id, name="hba1c", value=6.4,
+                             unit="%", ref_low=4.0, ref_high=5.6, flag="high",
+                             measured_at=date(2026, 6, 1)))
+    db_session.commit()
+
+    metabolic = _system(build_systems(db_session, test_user), "metabolic")
+    hba1c = next(m for m in metabolic.metrics if m.label == "HbA1c")
+    assert hba1c.direction == "improving"
+    assert hba1c.history == [7.5, 6.4]
+
+
+def test_system_summary_leads_with_abnormal_count(db_session, test_user):
+    report = Report(user_id=test_user.id, file_url="x", parse_status="parsed")
+    db_session.add(report)
+    db_session.commit()
+    db_session.add_all([
+        Biomarker(report_id=report.id, name="ldl", value=180, unit="mg/dL",
+                  ref_low=None, ref_high=100, flag="high"),
+        Biomarker(report_id=report.id, name="hdl", value=55, unit="mg/dL",
+                  ref_low=40, ref_high=60, flag="normal"),
+    ])
+    db_session.commit()
+
+    heart = _system(build_systems(db_session, test_user), "heart")
+    summary = heart.summary()
+    assert summary["tone"] == "attention"
+    assert "1 of 2" in summary["headline"]

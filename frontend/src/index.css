@@ -585,3 +585,36 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   .twin-ring,
   .twin-region-pulse { animation: none; }
 }
+
+/* Twin: empty-tab marker, so a system with no data is obviously empty rather
+   than merely faint. */
+.twin-tab-lock {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  opacity: .5;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 1px 5px;
+}
+
+/* Related-system link -- a full-width row that switches the active tab. */
+.twin-related {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: inherit;
+  cursor: pointer;
+  transition: border-color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.twin-related:hover {
+  border-color: var(--blue);
+  background: rgba(56, 132, 232, 0.05);
+  transform: translateX(2px);
+}
