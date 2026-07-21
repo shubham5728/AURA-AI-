@@ -73,13 +73,11 @@ export default function TwinAvatar({ accent, region, whole = false }: Props) {
         preserveAspectRatio="xMidYMid meet"
         mask="url(#twinMask)" />
 
-      {/* A ring marks the highlighted region on the body edge. */}
-      {!whole && (
-        <ellipse cx={C} cy={glowY} rx={78} ry={16} fill="none"
-          stroke={accent} strokeOpacity={0.6} strokeWidth={1.4}
-          className="twin-region-pulse"
-          style={{ transition: 'cy .5s cubic-bezier(.4,0,.2,1)' }} />
-      )}
+      {/* The region is shown by the soft glow above, alone. An earlier stroked
+          ring over the body read as a floating decorative line rather than a
+          medical cue, and it existed in no other part of the visual language --
+          so it was removed rather than restyled. The glow carries the same
+          meaning without the hard edge. */}
 
       {/* Scanning platform, the concentric-ring treatment from the login hero. */}
       {[0, 1, 2].map((ring) => (

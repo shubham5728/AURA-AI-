@@ -573,17 +573,10 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   animation: twin-ring-expand 4.5s ease-out infinite;
 }
 
-.twin-region-pulse {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: twin-breathe 3s ease-in-out infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .twin-scene,
   .twin-breathe,
-  .twin-ring,
-  .twin-region-pulse { animation: none; }
+  .twin-ring { animation: none; }
 }
 
 /* Twin: empty-tab marker, so a system with no data is obviously empty rather
