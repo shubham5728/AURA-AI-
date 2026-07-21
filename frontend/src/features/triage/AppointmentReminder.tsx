@@ -12,8 +12,12 @@
  */
 
 import { useState } from 'react';
-import { CalendarPlus, Stethoscope } from 'lucide-react';
+import { CalendarPlus, PhoneCall, Stethoscope } from 'lucide-react';
 import { downloadIcs } from '../../lib/calendar';
+import { STATUS_COLOUR } from '../../components/ui/tokens';
+
+/** India's unified emergency number. Matches the one the safety layer uses. */
+const EMERGENCY_NUMBER = '112';
 
 interface Props {
   symptom: string;
@@ -36,9 +40,28 @@ export default function AppointmentReminder({ symptom, guidance, emergency }: Pr
   const [added, setAdded] = useState(false);
 
   if (emergency) {
-    // No scheduling here. Offering a date picker for an emergency would be the
-    // wrong message entirely; the guidance above already says to seek care now.
-    return null;
+    // Scheduling is the wrong action for an emergency, but showing nothing is
+    // too. The right next step is immediate care, so this offers a one-tap call
+    // to emergency services rather than a date picker for next week.
+    return (
+      <div style={{
+        marginTop: 'var(--space-4)', padding: 'var(--space-4)', borderRadius: 14,
+        background: `${STATUS_COLOUR.urgent}12`, border: `1px solid ${STATUS_COLOUR.urgent}44`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: STATUS_COLOUR.urgent }}>
+          <PhoneCall size={16} />
+          <b>This needs urgent attention</b>
+        </div>
+        <p style={{ margin: '6px 0 var(--space-3)', fontSize: 'var(--text-small)', opacity: 0.85 }}>
+          Do not wait for an appointment. Call emergency services now, or get to the
+          nearest emergency room.
+        </p>
+        <a href={`tel:${EMERGENCY_NUMBER}`} className="btn primary"
+          style={{ background: STATUS_COLOUR.urgent, borderColor: STATUS_COLOUR.urgent }}>
+          <PhoneCall size={16} /> Call emergency services ({EMERGENCY_NUMBER})
+        </a>
+      </div>
+    );
   }
 
   const add = () => {
