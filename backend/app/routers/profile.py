@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models import Profile, User
 from app.schemas import ProfileIn, ProfileOut, TwinContext, UserOut
 from app.twin import build_twin_context, profile_to_out
+from app.services.twin_systems import build_systems
 
 router = APIRouter(prefix="/api", tags=["profile"])
 
@@ -73,3 +74,18 @@ def read_twin_context(
             detail="Profile not found. Complete onboarding first.",
         )
     return build_twin_context(profile)
+
+
+@router.get("/twin/systems")
+def twin_systems(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list:
+    """The Digital Twin grouped into physiological systems.
+
+    Every value is the user's own -- lab panels, logged habits, and BMI/BMR
+    computed from the profile. A system with no data reports it honestly rather
+    than showing an empty gauge, and names the specialist that covers it from
+    the real five roles.
+    """
+    return [s.as_dict() for s in build_systems(db, user)]

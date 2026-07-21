@@ -514,3 +514,74 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   .hero-ring { animation: none; opacity: .4; }
   .login-hero-orbit > g:hover { transform: none; }
 }
+
+/* Digital Twin systems
+   -------------------- */
+.twin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: var(--text-small);
+  font-weight: var(--w-semibold);
+  cursor: pointer;
+  transition: border-color .25s ease, background .25s ease, color .25s ease, transform .2s ease;
+}
+
+.twin-tab:hover { transform: translateY(-1px); }
+
+.twin-tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: opacity .25s ease;
+}
+
+/* The whole scene fades and lifts when the tab changes -- keyed on the active
+   system in the markup, so React remounts and replays it. */
+@keyframes twin-scene-in {
+  from { opacity: 0; transform: translateY(8px) scale(.995); }
+  to   { opacity: 1; transform: none; }
+}
+
+.twin-scene { animation: twin-scene-in .35s cubic-bezier(.4,0,.2,1); }
+
+@keyframes twin-breathe {
+  0%, 100% { opacity: .5;  transform: scale(1); }
+  50%      { opacity: .8;  transform: scale(1.04); }
+}
+
+.twin-breathe {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twin-breathe 5.5s ease-in-out infinite;
+}
+
+@keyframes twin-ring-expand {
+  0%   { transform: scale(.85); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+.twin-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twin-ring-expand 4.5s ease-out infinite;
+}
+
+.twin-region-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: twin-breathe 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twin-scene,
+  .twin-breathe,
+  .twin-ring,
+  .twin-region-pulse { animation: none; }
+}
