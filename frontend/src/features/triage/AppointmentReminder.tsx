@@ -12,8 +12,10 @@
  */
 
 import { useState } from 'react';
-import { CalendarPlus, PhoneCall, Stethoscope } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CalendarPlus, MessageCircle, PhoneCall, Stethoscope } from 'lucide-react';
 import { downloadIcs } from '../../lib/calendar';
+import { stashChatDraft } from '../../lib/chatHandoff';
 import { STATUS_COLOUR } from '../../components/ui/tokens';
 
 /** India's unified emergency number. Matches the one the safety layer uses. */
@@ -38,6 +40,19 @@ export default function AppointmentReminder({ symptom, guidance, emergency }: Pr
   const [date, setDate] = useState(isoDate(2));
   const [time, setTime] = useState('10:00');
   const [added, setAdded] = useState(false);
+  const nav = useNavigate();
+
+  // Hand the symptom to the AI companion as a ready-to-send question, then open
+  // the chat. The companion already reads the user's real health data, so this
+  // is the same triage carried into a conversation -- not a second, disconnected
+  // tool.
+  const discuss = () => {
+    stashChatDraft(
+      `I just did a symptom check for "${symptom}". Can you help me understand ` +
+      `what might be going on and what I should watch for?`,
+    );
+    nav('/app/companion');
+  };
 
   if (emergency) {
     // Scheduling is the wrong action for an emergency, but showing nothing is
@@ -106,6 +121,13 @@ export default function AppointmentReminder({ symptom, guidance, emergency }: Pr
           <CalendarPlus size={16} /> {added ? 'Added — check downloads' : 'Add to calendar'}
         </button>
       </div>
+
+      {/* The other honest next step: not every symptom needs a visit, but every
+          one can be talked through. This carries the same check into the AI
+          companion, which sees the user's real data. */}
+      <button className="btn ghost" onClick={discuss} style={{ marginTop: 'var(--space-3)' }}>
+        <MessageCircle size={16} /> Discuss this with AURA
+      </button>
     </div>
   );
 }

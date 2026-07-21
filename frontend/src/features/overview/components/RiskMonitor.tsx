@@ -9,11 +9,27 @@
  * Ordered by weight, because the largest factor is the one worth acting on.
  */
 
-import { AlertTriangle, ShieldCheck } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, MessageCircle, ShieldCheck } from 'lucide-react';
 import { STATUS_COLOUR, STATUS_TINT, statusForPoints } from '../../../components/ui/tokens';
+import { stashChatDraft } from '../../../lib/chatHandoff';
 import type { Concern } from '../types';
 
 export default function RiskMonitor({ concerns }: { concerns: Concern[] }) {
+  const nav = useNavigate();
+
+  // Turn a concern into a conversation with the companion, which reads the same
+  // health data this panel was built from. The evidence is carried along so the
+  // chat starts with the actual measurement, not a vague "tell me more".
+  const ask = (concern: Concern) => {
+    stashChatDraft(
+      `On my overview it says "${concern.reason}"` +
+      `${concern.evidence ? ` (${concern.evidence})` : ''}. ` +
+      `Can you explain what this means and what I can do about it?`,
+    );
+    nav('/app/companion');
+  };
+
   return (
     <article className="card" style={{ padding: 'var(--space-5)' }}>
       <span className="card-label">WHAT NEEDS ATTENTION</span>
@@ -53,6 +69,13 @@ export default function RiskMonitor({ concerns }: { concerns: Concern[] }) {
                       {concern.evidence}
                     </small>
                   )}
+                  <button onClick={() => ask(concern)} style={{
+                    marginTop: 6, padding: 0, background: 'none', border: 'none', cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    color: 'var(--accent, #2563eb)', font: 'inherit', fontSize: 'var(--text-small)',
+                  }}>
+                    <MessageCircle size={13} /> Ask AURA
+                  </button>
                 </div>
 
                 <small style={{ opacity: 0.55, whiteSpace: 'nowrap' }}>
