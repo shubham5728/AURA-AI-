@@ -89,6 +89,7 @@ class Profile(Base):
     allergies: Mapped[list] = mapped_column(JSON, default=list)
     goals: Mapped[list] = mapped_column(JSON, default=list)
 
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
@@ -169,6 +170,8 @@ class DailyLog(Base):
     water_ml: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     calories_in: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     calories_out: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="daily_logs")
 
@@ -323,6 +326,8 @@ class Medication(Base):
     # would stay true forever once ticked, so yesterday's dose would still read
     # as taken this morning.
     last_taken_on: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="medications")
 
