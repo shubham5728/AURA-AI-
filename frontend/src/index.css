@@ -618,3 +618,35 @@ h4{font-size:var(--text-body);line-height:var(--lh-body);font-weight:var(--w-bol
   background: rgba(56, 132, 232, 0.05);
   transform: translateX(2px);
 }
+
+/* Chat scrolling
+   -------------
+   The chat was a fixed-height panel whose messages list was the only scroll
+   container, so the wheel did nothing unless the cursor was over that list --
+   over the trace panel, the header or any gap it was dead. The page now scrolls
+   as one, like every other screen, so the wheel works anywhere.
+
+   The composer sticks to the bottom of the viewport so it stays reachable
+   while the conversation scrolls behind it. Placed at the end of the file to
+   win over the fixed-height rules above. */
+.chat-layout {
+  height: auto;
+  min-height: 0;
+  overflow: visible;
+}
+
+.chat-main { overflow: visible; min-height: 0; }
+.chat-history { overflow: visible; min-height: 0; }
+
+.messages {
+  flex: 0 1 auto;
+  overflow: visible;
+  min-height: 0;
+}
+
+.composer {
+  position: sticky;
+  bottom: 12px;
+  background: var(--surface);
+  z-index: 5;
+}
