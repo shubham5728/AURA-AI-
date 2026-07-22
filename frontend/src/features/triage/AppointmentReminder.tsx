@@ -34,6 +34,26 @@ function isoDate(daysFromNow: number): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * Half-hour appointment slots through the day, as 24-hour "HH:MM" values.
+ *
+ * A dropdown replaces the native <input type="time">, which renders
+ * inconsistently across browsers -- on some it looked read-only and would not
+ * change. A select is unambiguously clickable and the same everywhere.
+ */
+const TIME_SLOTS: string[] = [];
+for (let h = 7; h <= 21; h++) {
+  for (const m of ['00', '30']) TIME_SLOTS.push(`${String(h).padStart(2, '0')}:${m}`);
+}
+
+/** "13:30" -> "1:30 PM", for a label a patient reads at a glance. */
+function label12h(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 export default function AppointmentReminder({ symptom, guidance, emergency }: Props) {
   // Emergencies are handled by their own message, not by scheduling; every other
   // case defaults to a couple of days out, which the user can change.
@@ -112,11 +132,13 @@ export default function AppointmentReminder({ symptom, guidance, emergency }: Pr
         <input type="date" value={date} min={isoDate(0)}
           onChange={(e) => { setDate(e.target.value); setAdded(false); }}
           aria-label="Appointment date"
-          style={{ padding: '9px 11px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)' }} />
-        <input type="time" value={time}
+          style={{ padding: '9px 11px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', colorScheme: 'light dark' }} />
+        <select value={time}
           onChange={(e) => { setTime(e.target.value); setAdded(false); }}
           aria-label="Appointment time"
-          style={{ padding: '9px 11px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)' }} />
+          style={{ padding: '9px 11px', borderRadius: 10, border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--ink)', cursor: 'pointer' }}>
+          {TIME_SLOTS.map((t) => <option key={t} value={t}>{label12h(t)}</option>)}
+        </select>
         <button className="btn primary" onClick={add}>
           <CalendarPlus size={16} /> {added ? 'Added — check downloads' : 'Add to calendar'}
         </button>
