@@ -63,6 +63,22 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_upload_mb: int = 10
 
+    # Fitbit is the one wearable with a real web (OAuth) API a browser app can
+    # use -- Apple Health has no web API and Google Fit's is being retired. When
+    # these are unset, the "Connect Fitbit" flow reports itself as unconfigured
+    # rather than pretending to be connected. Register a free app at
+    # https://dev.fitbit.com/apps/new; the redirect URI must match exactly.
+    fitbit_client_id: str = ""
+    fitbit_client_secret: str = ""
+    fitbit_redirect_uri: str = ""
+
+    # Where the OAuth callback sends the browser back to once syncing is done.
+    frontend_url: str = "http://localhost:5173"
+
+    @property
+    def fitbit_configured(self) -> bool:
+        return bool(self.fitbit_client_id and self.fitbit_client_secret and self.fitbit_redirect_uri)
+
     @property
     def dev_auth_enabled(self) -> bool:
         """Dev auth requires BOTH the flag and a non-production environment.

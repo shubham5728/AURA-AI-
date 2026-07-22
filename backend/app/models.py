@@ -70,6 +70,9 @@ class User(Base):
     wearable_readings: Mapped[List["WearableReading"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    fitbit_connection: Mapped[Optional["FitbitConnection"]] = relationship(
+        back_populates="user", uselist=False, cascade="all, delete-orphan"
+    )
 
 
 class Profile(Base):
@@ -405,3 +408,30 @@ class WearableReading(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="wearable_readings")
+
+
+class FitbitConnection(Base):
+    """A user's live Fitbit link -- the OAuth tokens needed to sync their data.
+
+    One per user. Its existence is what "connected" means; there is no fake
+    connected state. Tokens are stored so a sync can run again without the user
+    re-authorising each time; the refresh token renews the access token when it
+    expires.
+    """
+
+    __tablename__ = "fitbit_connections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True
+    )
+
+    access_token: Mapped[str] = mapped_column(Text)
+    refresh_token: Mapped[str] = mapped_column(Text)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    fitbit_user_id: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="fitbit_connection")

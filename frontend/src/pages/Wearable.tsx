@@ -1,17 +1,21 @@
 /**
- * Wearable data — from the user's own export, never a fake live feed.
+ * Connect a device — honestly.
  *
- * AURA has no device connection, so this does not pretend a watch is streaming.
- * The user uploads the file they exported themselves (Apple Health, Fitbit,
- * Google Takeout); the backend reads it and this shows the real numbers, with
- * the source and date range named so nothing looks more connected than it is.
- * A metric the file didn't contain is left blank rather than invented.
+ * A browser app can only sync from one smartwatch platform for real: Fitbit,
+ * via OAuth. Apple Health has no web API and Google Fit's is retiring, so those
+ * devices route to importing an export file instead. Nothing here shows a fake
+ * connected state or invented numbers: Fitbit reads "connected" only when tokens
+ * exist, and if the server has no Fitbit credentials it says setup is needed.
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Activity, Footprints, HeartPulse, Moon, Trash2, Upload, Watch } from 'lucide-react';
-import { del, get, upload } from '../lib/api';
-import type { WearableImport, WearableSummary } from '../lib/types';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Activity, CheckCircle2, Footprints, HeartPulse, Link2, Moon, RefreshCw,
+  Trash2, Upload, Watch,
+} from 'lucide-react';
+import { del, get, post, upload } from '../lib/api';
+import type { FitbitStatus, WearableImport, WearableSummary } from '../lib/types';
 
 function StatTile({ icon, label, value, unit }: {
   icon: React.ReactNode; label: string; value: string; unit?: string;
@@ -30,16 +34,24 @@ function StatTile({ icon, label, value, unit }: {
 
 export default function WearablePage() {
   const [summary, setSummary] = useState<WearableSummary | null>(null);
+  const [fitbit, setFitbit] = useState<FitbitStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
-  const [justImported, setJustImported] = useState<number | null>(null);
+  const [notice, setNotice] = useState('');
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [params, setParams] = useSearchParams();
 
-  const load = async () => {
+  const loadAll = async () => {
     try {
-      setSummary(await get<WearableSummary>('/api/wearable'));
+      const [s, f] = await Promise.all([
+        get<WearableSummary>('/api/wearable'),
+        get<FitbitStatus>('/api/wearable/fitbit/status'),
+      ]);
+      setSummary(s);
+      setFitbit(f);
       setError('');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not load wearable data');
@@ -48,17 +60,58 @@ export default function WearablePage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { loadAll(); }, []);
+
+  // The Fitbit callback sends the browser back with ?fitbit=connected|cancelled|error.
+  useEffect(() => {
+    const outcome = params.get('fitbit');
+    if (!outcome) return;
+    setNotice(
+      outcome === 'connected' ? 'Fitbit connected — your data has been synced.'
+        : outcome === 'cancelled' ? 'Fitbit connection was cancelled.'
+        : 'Could not connect Fitbit. Please try again.',
+    );
+    params.delete('fitbit');
+    setParams(params, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const connectFitbit = async () => {
+    setError('');
+    try {
+      const { url } = await get<{ url: string }>('/api/wearable/fitbit/authorize');
+      window.location.href = url; // full-page redirect into Fitbit's consent screen
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not start the Fitbit connection');
+    }
+  };
+
+  const syncFitbit = async () => {
+    setSyncing(true);
+    setError('');
+    try {
+      setSummary(await post<WearableSummary>('/api/wearable/fitbit/sync'));
+      await loadAll();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not sync from Fitbit');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const disconnectFitbit = async () => {
+    await del('/api/wearable/fitbit');
+    await loadAll();
+  };
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     setBusy(true);
     setError('');
-    setJustImported(null);
     try {
       const res = await upload<WearableImport>('/api/wearable/import', file);
       setSummary(res.summary);
-      setJustImported(res.imported);
+      setNotice(`Imported ${res.imported} day${res.imported === 1 ? '' : 's'} from your ${res.source} export.`);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not read that file');
     } finally {
@@ -69,8 +122,7 @@ export default function WearablePage() {
 
   const clear = async () => {
     await del('/api/wearable');
-    setJustImported(null);
-    await load();
+    await loadAll();
   };
 
   const has = summary && summary.days > 0;
@@ -79,18 +131,78 @@ export default function WearablePage() {
     <main className="page">
       <header className="page-head">
         <div>
-          <h1>Wearable Data</h1>
-          <p>No device is connected to AURA. Upload the health data you exported from your
-            own watch or phone, and AURA will read the real numbers from it.</p>
+          <h1>Connect a Device</h1>
+          <p>Link Fitbit to sync automatically, or import an export from any other device.
+            AURA only ever shows the real numbers from your account — never a fake feed.</p>
         </div>
       </header>
 
+      {notice && (
+        <div className="card" style={{ padding: '0.85rem 1.1rem', maxWidth: 760, marginBottom: '1rem',
+          display: 'flex', alignItems: 'center', gap: 8, color: 'var(--accent, #2563eb)' }}>
+          <CheckCircle2 size={16} /> {notice}
+        </div>
+      )}
+
+      {/* Fitbit — the real device connection */}
       <section className="card" style={{ padding: '1.5rem', maxWidth: 760 }}>
-        <span className="card-label"><Upload size={14} /> IMPORT AN EXPORT</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center',
+            background: 'rgba(0,178,169,0.14)', color: '#00b2a9' }}><Watch size={18} /></span>
+          <div style={{ flex: 1 }}>
+            <b>Fitbit</b>
+            <div style={{ fontSize: 'var(--text-small)', opacity: 0.7 }}>Automatic sync over your Fitbit account</div>
+          </div>
+          {fitbit?.connected && (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#16a34a', fontSize: 'var(--text-small)' }}>
+              <CheckCircle2 size={15} /> Connected
+            </span>
+          )}
+        </div>
+
+        <div style={{ marginTop: '1rem' }}>
+          {!fitbit ? (
+            <p style={{ opacity: 0.7 }}>Checking…</p>
+          ) : !fitbit.configured ? (
+            <p style={{ fontSize: 'var(--text-small)', opacity: 0.7 }}>
+              Fitbit sync isn't set up on this server yet. Once Fitbit API credentials are
+              added, a <b>Connect Fitbit</b> button appears here.
+            </p>
+          ) : fitbit.connected ? (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <button className="btn primary" onClick={syncFitbit} disabled={syncing}>
+                <RefreshCw size={15} /> {syncing ? 'Syncing…' : 'Sync now'}
+              </button>
+              <button className="btn ghost" onClick={disconnectFitbit}>Disconnect</button>
+              {fitbit.last_synced_at && (
+                <small style={{ opacity: 0.6 }}>
+                  Last synced {new Date(fitbit.last_synced_at).toLocaleString()}
+                </small>
+              )}
+            </div>
+          ) : (
+            <button className="btn primary" onClick={connectFitbit}>
+              <Link2 size={16} /> Connect Fitbit
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* Everything else — import fallback */}
+      <section className="card" style={{ padding: '1.5rem', maxWidth: 760, marginTop: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '0.35rem' }}>
+          <span style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center',
+            background: 'var(--surface2, rgba(128,128,128,0.1))' }}><Upload size={17} /></span>
+          <div>
+            <b>Apple Watch &amp; other devices</b>
+            <div style={{ fontSize: 'var(--text-small)', opacity: 0.7 }}>Import an export — no browser sync exists for these</div>
+          </div>
+        </div>
         <p style={{ fontSize: 'var(--text-small)', opacity: 0.8, margin: '0.5rem 0 1rem' }}>
-          Accepts an <b>Apple Health</b> <code>export.xml</code>, or a <b>CSV</b> from Fitbit,
-          Google Takeout, or your own sheet (with date, steps, resting heart rate, or sleep
-          columns). Files stay private to your account.
+          Apple Health has no web connection, so export your data from the Health app (or
+          Fitbit/Google Takeout) and drop it here. Accepts an <b>Apple Health</b>{' '}
+          <code>export.xml</code> or a <b>CSV</b> with date, steps, resting heart rate, or
+          sleep columns.
         </p>
 
         <input ref={fileRef} type="file" accept=".csv,.xml,text/csv,text/xml"
@@ -105,40 +217,33 @@ export default function WearablePage() {
           onDrop={(e) => { e.preventDefault(); setDragging(false); onFile(e.dataTransfer.files?.[0]); }}
           style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-            padding: '2rem 1rem', borderRadius: 14, cursor: busy ? 'wait' : 'pointer',
+            padding: '1.75rem 1rem', borderRadius: 14, cursor: busy ? 'wait' : 'pointer',
             border: `2px dashed ${dragging ? 'var(--accent, #2563eb)' : 'var(--line)'}`,
-            background: dragging ? 'var(--accent-soft, rgba(37,99,235,0.08))' : 'var(--surface2, transparent)',
+            background: dragging ? 'var(--accent-soft, rgba(37,99,235,0.08))' : 'transparent',
             transition: 'border-color .15s, background .15s', textAlign: 'center',
           }}
         >
-          <Upload size={22} style={{ opacity: 0.7 }} />
-          {busy ? (
-            <b>Reading your file…</b>
-          ) : (
+          <Upload size={20} style={{ opacity: 0.7 }} />
+          {busy ? <b>Reading your file…</b> : (
             <>
               <b><span style={{ color: 'var(--accent, #2563eb)' }}>Click to choose</span> or drag a file here</b>
               <small style={{ opacity: 0.6 }}>Apple Health .xml or a .csv export</small>
             </>
           )}
         </div>
-
-        {justImported !== null && (
-          <p style={{ marginTop: '0.75rem', color: 'var(--accent, #2563eb)' }}>
-            ✓ Imported {justImported} day{justImported === 1 ? '' : 's'} of real data.
-          </p>
-        )}
       </section>
 
-      {error && <div className="error" style={{ marginTop: '1rem' }}>{error}</div>}
+      {error && <div className="error" style={{ marginTop: '1rem', maxWidth: 760 }}>{error}</div>}
 
+      {/* Synced / imported data */}
       {loading ? (
         <p style={{ opacity: 0.7, marginTop: '2rem' }}>Loading…</p>
       ) : !has ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 760,
-          marginTop: '1rem', padding: '0 0.25rem', opacity: 0.6, fontSize: 'var(--text-small)' }}>
+          marginTop: '1.25rem', padding: '0 0.25rem', opacity: 0.6, fontSize: 'var(--text-small)' }}>
           <Watch size={16} />
-          <span>Once imported, your real resting heart rate, sleep and steps appear here —
-            and only what the file actually contains.</span>
+          <span>Once connected or imported, your real resting heart rate, sleep and steps
+            appear here — and only what your data actually contains.</span>
         </div>
       ) : (
         <>

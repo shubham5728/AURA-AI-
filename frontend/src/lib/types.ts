@@ -191,6 +191,13 @@ export interface WearableImport {
   summary: WearableSummary;
 }
 
+/** Whether Fitbit sync is possible on this server, and whether it's linked. */
+export interface FitbitStatus {
+  configured: boolean;
+  connected: boolean;
+  last_synced_at: string | null;
+}
+
 export interface SimulationChange {
   field: string;
   label: string;

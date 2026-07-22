@@ -249,3 +249,11 @@ class WearableImportOut(BaseModel):
     imported: int
     source: str
     summary: WearableSummaryOut
+
+
+class FitbitStatusOut(BaseModel):
+    """Whether Fitbit sync is even possible here, and whether it's linked."""
+
+    configured: bool
+    connected: bool
+    last_synced_at: Optional[datetime] = None
