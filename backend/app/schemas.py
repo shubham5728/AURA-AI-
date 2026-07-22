@@ -205,3 +205,47 @@ class TwinContext(BaseModel):
     conditions: List[str]
     allergies: List[str]
     goals: List[str]
+
+
+class AppointmentIn(BaseModel):
+    doctor_name: str = Field(min_length=1, max_length=128)
+    specialty: Optional[str] = Field(default=None, max_length=96)
+    scheduled_at: datetime
+    reason: Optional[str] = Field(default=None, max_length=255)
+    location: Optional[str] = Field(default=None, max_length=255)
+    notes: Optional[str] = Field(default=None, max_length=2000)
+
+
+class AppointmentOut(AppointmentIn):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+
+
+class WearableReadingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    measured_on: date
+    steps: Optional[int] = None
+    resting_hr: Optional[int] = None
+    sleep_hours: Optional[float] = None
+    source: str
+
+
+class WearableSummaryOut(BaseModel):
+    """What was actually imported -- counts and averages over real days only."""
+
+    days: int
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    sources: List[str] = []
+    avg_steps: Optional[int] = None
+    avg_resting_hr: Optional[int] = None
+    avg_sleep_hours: Optional[float] = None
+    readings: List[WearableReadingOut] = []
+
+
+class WearableImportOut(BaseModel):
+    imported: int
+    source: str
+    summary: WearableSummaryOut

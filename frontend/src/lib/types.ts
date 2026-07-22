@@ -153,6 +153,44 @@ export interface Conversation {
   message_count: number;
 }
 
+/** A doctor visit the user has arranged and keeps a record of. */
+export interface Appointment {
+  id: number;
+  doctor_name: string;
+  specialty: string | null;
+  scheduled_at: string;
+  reason: string | null;
+  location: string | null;
+  notes: string | null;
+}
+
+/** One day of metrics read from a wearable/health export. */
+export interface WearableReading {
+  measured_on: string;
+  steps: number | null;
+  resting_hr: number | null;
+  sleep_hours: number | null;
+  source: string;
+}
+
+/** What an import produced, or the current stored picture. */
+export interface WearableSummary {
+  days: number;
+  date_from: string | null;
+  date_to: string | null;
+  sources: string[];
+  avg_steps: number | null;
+  avg_resting_hr: number | null;
+  avg_sleep_hours: number | null;
+  readings: WearableReading[];
+}
+
+export interface WearableImport {
+  imported: number;
+  source: string;
+  summary: WearableSummary;
+}
+
 export interface SimulationChange {
   field: string;
   label: string;

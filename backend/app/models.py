@@ -64,6 +64,12 @@ class User(Base):
     score_snapshots: Mapped[List["ScoreSnapshot"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
+    appointments: Mapped[List["Appointment"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    wearable_readings: Mapped[List["WearableReading"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Profile(Base):
@@ -341,3 +347,61 @@ class Medication(Base):
     @property
     def taken_today(self) -> bool:
         return self.last_taken_on == date.today()
+
+
+class Appointment(Base):
+    """A doctor visit the user has arranged.
+
+    AURA has no clinic network and books nothing -- this is a record the user
+    keeps and the source for a calendar reminder. Storing it honestly (what the
+    user actually scheduled) is the point; there are no invented doctors or slots.
+    """
+
+    __tablename__ = "appointments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    doctor_name: Mapped[str] = mapped_column(String(128))
+    specialty: Mapped[Optional[str]] = mapped_column(String(96), nullable=True)
+    scheduled_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    reason: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="appointments")
+
+
+class WearableReading(Base):
+    """One day of metrics imported from a wearable/health export.
+
+    AURA has no live device link. These rows come from a file the user exported
+    themselves (Apple Health, Fitbit, Google), so every value is real and its
+    `source` records where it came from -- nothing here is synthesised.
+    """
+
+    __tablename__ = "wearable_readings"
+    __table_args__ = (
+        # One row per day per source, so re-importing the same export updates
+        # rather than duplicates.
+        UniqueConstraint("user_id", "measured_on", "source", name="uq_wearable_day"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+
+    measured_on: Mapped[date] = mapped_column(Date, index=True)
+    steps: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    resting_hr: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    sleep_hours: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    source: Mapped[str] = mapped_column(String(48))  # "Apple Health" | "Fitbit" | "CSV"
+
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+
+    user: Mapped["User"] = relationship(back_populates="wearable_readings")

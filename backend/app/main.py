@@ -7,7 +7,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.auth import init_firebase
 from app.config import get_settings
 from app.database import Base, engine
-from app.routers import chat, family, logs, overview, profile, reports, score, simulate
+from app.routers import (
+    appointments,
+    chat,
+    family,
+    logs,
+    overview,
+    profile,
+    reports,
+    score,
+    simulate,
+    wearable,
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,6 +69,8 @@ app.include_router(chat.router)
 app.include_router(simulate.router)
 app.include_router(family.router)
 app.include_router(overview.router)
+app.include_router(appointments.router)
+app.include_router(wearable.router)
 
 
 @app.get("/health", tags=["meta"])
