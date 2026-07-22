@@ -61,21 +61,37 @@ class AgentReply:
     trace: dict = field(default_factory=dict)
 
 
-def _load_history(db: Session, user_id: int) -> List[dict]:
+def _load_history(
+    db: Session, user_id: int, conversation_id: Optional[str] = None
+) -> List[dict]:
+    query = db.query(ChatMessage).filter(ChatMessage.user_id == user_id)
+    # Scope to the active conversation so a fresh thread does not feed the model
+    # turns from an unrelated one. A missing id matches the legacy conversation
+    # (rows written before threads existed), which all share conversation_id NULL.
+    query = query.filter(ChatMessage.conversation_id == conversation_id)
     rows = (
-        db.query(ChatMessage)
-        .filter(ChatMessage.user_id == user_id)
-        .order_by(ChatMessage.id.desc())
+        query.order_by(ChatMessage.id.desc())
         .limit(HISTORY_TURNS * 2)
         .all()
     )
     return [{"role": row.role, "content": row.content} for row in reversed(rows)]
 
 
-def _persist(db: Session, user_id: int, role: str, content: str, agent_role: Optional[str]) -> None:
+def _persist(
+    db: Session,
+    user_id: int,
+    role: str,
+    content: str,
+    agent_role: Optional[str],
+    conversation_id: Optional[str] = None,
+) -> None:
     db.add(
         ChatMessage(
-            user_id=user_id, role=role, content=content, agent_role=agent_role
+            user_id=user_id,
+            role=role,
+            content=content,
+            agent_role=agent_role,
+            conversation_id=conversation_id,
         )
     )
     db.commit()
@@ -86,11 +102,12 @@ def answer(
     user: User,
     message: str,
     llm: Optional[LLMClient] = None,
+    conversation_id: Optional[str] = None,
 ) -> AgentReply:
     """Produce a reply to one user message, recording how it was produced."""
     llm = llm or get_llm()
     timer = Timer()
-    _persist(db, user.id, "user", message, None)
+    _persist(db, user.id, "user", message, None, conversation_id)
 
     with timer.stage("safety_in", "Safety screen") as stage:
         verdict = safety.screen_input(message)
@@ -107,7 +124,7 @@ def answer(
         logger.warning(
             "Emergency intercepted for user=%s category=%s", user.id, verdict.category
         )
-        _persist(db, user.id, "assistant", verdict.response, "emergency")
+        _persist(db, user.id, "assistant", verdict.response, "emergency", conversation_id)
         trace = timer.finish()
         # The absence of later stages is the point: it shows the model was never
         # reached, rather than asking anyone to take that on trust.
@@ -165,7 +182,7 @@ def answer(
         "say you do not have that information yet."
     )
 
-    history = _load_history(db, user.id)[:-1]  # drop the message just persisted
+    history = _load_history(db, user.id, conversation_id)[:-1]  # drop the message just persisted
 
     try:
         with timer.stage("generation", "Generate reply") as stage:
@@ -212,7 +229,7 @@ def answer(
     if warnings:
         logger.warning("Safety warnings for user=%s: %s", user.id, warnings)
 
-    _persist(db, user.id, "assistant", text, role.key)
+    _persist(db, user.id, "assistant", text, role.key, conversation_id)
 
     trace = timer.finish()
     # The de-identified bytes the model received, returned so the user can see

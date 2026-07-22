@@ -300,6 +300,13 @@ class ChatMessage(Base):
     content: Mapped[str] = mapped_column(Text)
     agent_role: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
 
+    # Groups turns into a single conversation, the way a chat app keeps separate
+    # threads. Nullable so every message written before this column existed
+    # reads as one "legacy" conversation rather than being lost.
+    conversation_id: Mapped[Optional[str]] = mapped_column(
+        String(64), index=True, nullable=True
+    )
+
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
     user: Mapped["User"] = relationship(back_populates="chat_messages")

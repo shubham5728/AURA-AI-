@@ -145,6 +145,14 @@ export interface ChatTurn {
   agent_role: string | null;
 }
 
+/** One chat thread, summarised for the list of past conversations. */
+export interface Conversation {
+  conversation_id: string | null;
+  title: string;
+  updated_at: string;
+  message_count: number;
+}
+
 export interface SimulationChange {
   field: string;
   label: string;
