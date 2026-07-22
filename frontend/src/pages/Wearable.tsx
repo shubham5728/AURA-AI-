@@ -34,6 +34,7 @@ export default function WearablePage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [justImported, setJustImported] = useState<number | null>(null);
+  const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -91,13 +92,39 @@ export default function WearablePage() {
           Google Takeout, or your own sheet (with date, steps, resting heart rate, or sleep
           columns). Files stay private to your account.
         </p>
+
         <input ref={fileRef} type="file" accept=".csv,.xml,text/csv,text/xml"
-          onChange={(e) => onFile(e.target.files?.[0])} disabled={busy}
-          style={{ display: 'block' }} />
-        {busy && <p style={{ marginTop: '0.75rem', opacity: 0.7 }}>Reading your file…</p>}
+          onChange={(e) => onFile(e.target.files?.[0])} style={{ display: 'none' }} />
+
+        <div
+          role="button" tabIndex={0}
+          onClick={() => !busy && fileRef.current?.click()}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileRef.current?.click(); }}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => { e.preventDefault(); setDragging(false); onFile(e.dataTransfer.files?.[0]); }}
+          style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+            padding: '2rem 1rem', borderRadius: 14, cursor: busy ? 'wait' : 'pointer',
+            border: `2px dashed ${dragging ? 'var(--accent, #2563eb)' : 'var(--line)'}`,
+            background: dragging ? 'var(--accent-soft, rgba(37,99,235,0.08))' : 'var(--surface2, transparent)',
+            transition: 'border-color .15s, background .15s', textAlign: 'center',
+          }}
+        >
+          <Upload size={22} style={{ opacity: 0.7 }} />
+          {busy ? (
+            <b>Reading your file…</b>
+          ) : (
+            <>
+              <b><span style={{ color: 'var(--accent, #2563eb)' }}>Click to choose</span> or drag a file here</b>
+              <small style={{ opacity: 0.6 }}>Apple Health .xml or a .csv export</small>
+            </>
+          )}
+        </div>
+
         {justImported !== null && (
           <p style={{ marginTop: '0.75rem', color: 'var(--accent, #2563eb)' }}>
-            Imported {justImported} day{justImported === 1 ? '' : 's'} of real data.
+            ✓ Imported {justImported} day{justImported === 1 ? '' : 's'} of real data.
           </p>
         )}
       </section>
@@ -107,13 +134,12 @@ export default function WearablePage() {
       {loading ? (
         <p style={{ opacity: 0.7, marginTop: '2rem' }}>Loading…</p>
       ) : !has ? (
-        <section style={{ marginTop: '2rem', maxWidth: 760, textAlign: 'center', opacity: 0.75 }}>
-          <Watch size={40} style={{ opacity: 0.5 }} />
-          <p style={{ marginTop: '0.75rem' }}>
-            Nothing imported yet. When you upload an export, your real resting heart rate,
-            sleep, and steps will show here — and only what the file actually contains.
-          </p>
-        </section>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 760,
+          marginTop: '1rem', padding: '0 0.25rem', opacity: 0.6, fontSize: 'var(--text-small)' }}>
+          <Watch size={16} />
+          <span>Once imported, your real resting heart rate, sleep and steps appear here —
+            and only what the file actually contains.</span>
+        </div>
       ) : (
         <>
           <section style={{ marginTop: '2rem', maxWidth: 760 }}>
