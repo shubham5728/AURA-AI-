@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CalendarClock, CalendarPlus, MapPin, Plus, Stethoscope, X } from 'lucide-react';
 import { del, get, post } from '../lib/api';
 import { downloadIcs } from '../lib/calendar';
@@ -31,6 +32,11 @@ function formatWhen(iso: string): string {
 }
 
 export default function AppointmentsPage() {
+  // A symptom check can hand its symptom over as the reason (see the triage
+  // AppointmentReminder). If it did, the form opens pre-filled.
+  const nav = useLocation();
+  const handedReason = (nav.state as { reason?: string } | null)?.reason ?? '';
+
   const [items, setItems] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -38,7 +44,7 @@ export default function AppointmentsPage() {
   const [doctor, setDoctor] = useState('');
   const [specialty, setSpecialty] = useState('');
   const [when, setWhen] = useState(localDatetime(2));
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState(handedReason);
   const [location, setLocation] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -147,6 +153,11 @@ export default function AppointmentsPage() {
 
       <form className="card" style={{ padding: '1.5rem', maxWidth: 760 }} onSubmit={add}>
         <span className="card-label">ADD AN APPOINTMENT</span>
+        {handedReason && (
+          <p style={{ margin: '0.25rem 0 0.75rem', fontSize: 'var(--text-small)', color: 'var(--accent, #2563eb)' }}>
+            Carried over from your symptom check — fill in the doctor and time to save it.
+          </p>
+        )}
         <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))' }}>
           <label>Doctor / clinic
             <input value={doctor} onChange={(e) => setDoctor(e.target.value)} placeholder="Dr. Mehta" required />
