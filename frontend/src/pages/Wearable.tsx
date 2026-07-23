@@ -1,11 +1,12 @@
 /**
- * Connect a device — honestly.
+ * Wearable data — imported from the user's own export.
  *
- * A browser app can only sync from one smartwatch platform for real: Fitbit,
- * via OAuth. Apple Health has no web API and Google Fit's is retiring, so those
- * devices route to importing an export file instead. Nothing here shows a fake
- * connected state or invented numbers: Fitbit reads "connected" only when tokens
- * exist, and if the server has no Fitbit credentials it says setup is needed.
+ * A browser app cannot pull live from an Apple Watch (no web API) or Fitbit
+ * (developer access closed to new apps), and Google Fit's API is retiring. So
+ * the honest, free, works-for-everyone path is import: the user uploads the file
+ * they exported themselves and AURA reads the real numbers. Nothing here shows a
+ * fake live feed or invented values. (If the server is ever given Fitbit
+ * credentials, a real "Connect Fitbit" button appears too.)
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -62,7 +63,7 @@ export default function WearablePage() {
 
   useEffect(() => { loadAll(); }, []);
 
-  // The Fitbit callback sends the browser back with ?fitbit=connected|cancelled|error.
+  // The Fitbit callback (only reachable when configured) returns here.
   useEffect(() => {
     const outcome = params.get('fitbit');
     if (!outcome) return;
@@ -80,7 +81,7 @@ export default function WearablePage() {
     setError('');
     try {
       const { url } = await get<{ url: string }>('/api/wearable/fitbit/authorize');
-      window.location.href = url; // full-page redirect into Fitbit's consent screen
+      window.location.href = url;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not start the Fitbit connection');
     }
@@ -131,9 +132,9 @@ export default function WearablePage() {
     <main className="page">
       <header className="page-head">
         <div>
-          <h1>Connect a Device</h1>
-          <p>Link Fitbit to sync automatically, or import an export from any other device.
-            AURA only ever shows the real numbers from your account — never a fake feed.</p>
+          <h1>Wearable Data</h1>
+          <p>Bring your real watch and phone data into AURA. It reads only what your export
+            actually contains — never a made-up feed.</p>
         </div>
       </header>
 
@@ -144,65 +145,13 @@ export default function WearablePage() {
         </div>
       )}
 
-      {/* Fitbit — the real device connection */}
+      {/* Import — the primary, free, works-for-every-device path */}
       <section className="card" style={{ padding: '1.5rem', maxWidth: 760 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center',
-            background: 'rgba(0,178,169,0.14)', color: '#00b2a9' }}><Watch size={18} /></span>
-          <div style={{ flex: 1 }}>
-            <b>Fitbit</b>
-            <div style={{ fontSize: 'var(--text-small)', opacity: 0.7 }}>Automatic sync over your Fitbit account</div>
-          </div>
-          {fitbit?.connected && (
-            <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#16a34a', fontSize: 'var(--text-small)' }}>
-              <CheckCircle2 size={15} /> Connected
-            </span>
-          )}
-        </div>
-
-        <div style={{ marginTop: '1rem' }}>
-          {!fitbit ? (
-            <p style={{ opacity: 0.7 }}>Checking…</p>
-          ) : !fitbit.configured ? (
-            <p style={{ fontSize: 'var(--text-small)', opacity: 0.7 }}>
-              Fitbit sync isn't set up on this server yet. Once Fitbit API credentials are
-              added, a <b>Connect Fitbit</b> button appears here.
-            </p>
-          ) : fitbit.connected ? (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button className="btn primary" onClick={syncFitbit} disabled={syncing}>
-                <RefreshCw size={15} /> {syncing ? 'Syncing…' : 'Sync now'}
-              </button>
-              <button className="btn ghost" onClick={disconnectFitbit}>Disconnect</button>
-              {fitbit.last_synced_at && (
-                <small style={{ opacity: 0.6 }}>
-                  Last synced {new Date(fitbit.last_synced_at).toLocaleString()}
-                </small>
-              )}
-            </div>
-          ) : (
-            <button className="btn primary" onClick={connectFitbit}>
-              <Link2 size={16} /> Connect Fitbit
-            </button>
-          )}
-        </div>
-      </section>
-
-      {/* Everything else — import fallback */}
-      <section className="card" style={{ padding: '1.5rem', maxWidth: 760, marginTop: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '0.35rem' }}>
-          <span style={{ width: 34, height: 34, borderRadius: 10, display: 'grid', placeItems: 'center',
-            background: 'var(--surface2, rgba(128,128,128,0.1))' }}><Upload size={17} /></span>
-          <div>
-            <b>Apple Watch &amp; other devices</b>
-            <div style={{ fontSize: 'var(--text-small)', opacity: 0.7 }}>Import an export — no browser sync exists for these</div>
-          </div>
-        </div>
+        <span className="card-label"><Upload size={14} /> IMPORT YOUR DATA</span>
         <p style={{ fontSize: 'var(--text-small)', opacity: 0.8, margin: '0.5rem 0 1rem' }}>
-          Apple Health has no web connection, so export your data from the Health app (or
-          Fitbit/Google Takeout) and drop it here. Accepts an <b>Apple Health</b>{' '}
-          <code>export.xml</code> or a <b>CSV</b> with date, steps, resting heart rate, or
-          sleep columns.
+          Export from your device and drop the file here. From an iPhone: Health app → your
+          profile → <b>Export All Health Data</b>. Also accepts a <b>Fitbit/Google Takeout</b>{' '}
+          or plain <b>CSV</b> with date, steps, resting heart rate, or sleep columns.
         </p>
 
         <input ref={fileRef} type="file" accept=".csv,.xml,text/csv,text/xml"
@@ -217,13 +166,13 @@ export default function WearablePage() {
           onDrop={(e) => { e.preventDefault(); setDragging(false); onFile(e.dataTransfer.files?.[0]); }}
           style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-            padding: '1.75rem 1rem', borderRadius: 14, cursor: busy ? 'wait' : 'pointer',
+            padding: '2rem 1rem', borderRadius: 14, cursor: busy ? 'wait' : 'pointer',
             border: `2px dashed ${dragging ? 'var(--accent, #2563eb)' : 'var(--line)'}`,
             background: dragging ? 'var(--accent-soft, rgba(37,99,235,0.08))' : 'transparent',
             transition: 'border-color .15s, background .15s', textAlign: 'center',
           }}
         >
-          <Upload size={20} style={{ opacity: 0.7 }} />
+          <Upload size={22} style={{ opacity: 0.7 }} />
           {busy ? <b>Reading your file…</b> : (
             <>
               <b><span style={{ color: 'var(--accent, #2563eb)' }}>Click to choose</span> or drag a file here</b>
@@ -233,17 +182,46 @@ export default function WearablePage() {
         </div>
       </section>
 
+      {/* Honest note on live sync — with a real Fitbit button only if configured */}
+      <div style={{ maxWidth: 760, marginTop: '1rem', padding: '0.25rem' }}>
+        {fitbit?.connected ? (
+          <div className="card" style={{ padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#16a34a' }}>
+              <CheckCircle2 size={16} /> <b>Fitbit connected</b>
+            </span>
+            <button className="btn ghost" onClick={syncFitbit} disabled={syncing}>
+              <RefreshCw size={14} /> {syncing ? 'Syncing…' : 'Sync now'}
+            </button>
+            <button className="btn ghost" onClick={disconnectFitbit}>Disconnect</button>
+            {fitbit.last_synced_at && (
+              <small style={{ opacity: 0.6 }}>Last synced {new Date(fitbit.last_synced_at).toLocaleString()}</small>
+            )}
+          </div>
+        ) : fitbit?.configured ? (
+          <button className="btn ghost" onClick={connectFitbit}>
+            <Link2 size={15} /> Or connect Fitbit for automatic sync
+          </button>
+        ) : (
+          <p style={{ fontSize: 'var(--text-small)', opacity: 0.6, margin: 0, display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <Watch size={15} style={{ marginTop: 2, flexShrink: 0 }} />
+            <span>Live sync isn't offered here: a browser app can't read an Apple Watch (no
+              web API), and Fitbit has closed developer access to new apps. Importing your own
+              export is the honest, free way to bring in real data.</span>
+          </p>
+        )}
+      </div>
+
       {error && <div className="error" style={{ marginTop: '1rem', maxWidth: 760 }}>{error}</div>}
 
-      {/* Synced / imported data */}
+      {/* Imported / synced data */}
       {loading ? (
         <p style={{ opacity: 0.7, marginTop: '2rem' }}>Loading…</p>
       ) : !has ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: 760,
-          marginTop: '1.25rem', padding: '0 0.25rem', opacity: 0.6, fontSize: 'var(--text-small)' }}>
+          marginTop: '1.5rem', padding: '0 0.25rem', opacity: 0.6, fontSize: 'var(--text-small)' }}>
           <Watch size={16} />
-          <span>Once connected or imported, your real resting heart rate, sleep and steps
-            appear here — and only what your data actually contains.</span>
+          <span>Once imported, your real resting heart rate, sleep and steps appear here —
+            and only what the file actually contains.</span>
         </div>
       ) : (
         <>
